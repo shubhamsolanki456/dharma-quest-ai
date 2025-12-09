@@ -2,46 +2,50 @@ import { useState, useEffect, useRef } from 'react';
 
 export const useScrollHide = () => {
   const [isVisible, setIsVisible] = useState(true);
-  const lastScrollY = useRef(0);
-  const scrollableRef = useRef<HTMLElement | null>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isScrollingRef = useRef(false);
 
   useEffect(() => {
     // Find the scrollable container (MobileLayout's main content area)
     const scrollable = document.querySelector('.mobile-scroll-container') as HTMLElement;
-    if (!scrollable) {
-      // Fallback to window scroll
-      const handleWindowScroll = () => {
-        const currentScrollY = window.scrollY;
-        
-        if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
-          setIsVisible(false);
-        } else if (currentScrollY < lastScrollY.current) {
-          setIsVisible(true);
-        }
-        
-        lastScrollY.current = currentScrollY;
-      };
-
-      window.addEventListener('scroll', handleWindowScroll, { passive: true });
-      return () => window.removeEventListener('scroll', handleWindowScroll);
-    }
-
-    scrollableRef.current = scrollable;
-
+    
     const handleScroll = () => {
-      const currentScrollY = scrollable.scrollTop;
-      
-      if (currentScrollY > lastScrollY.current && currentScrollY > 50) {
+      // Hide while scrolling
+      if (!isScrollingRef.current) {
+        isScrollingRef.current = true;
         setIsVisible(false);
-      } else if (currentScrollY < lastScrollY.current) {
-        setIsVisible(true);
       }
-      
-      lastScrollY.current = currentScrollY;
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Show after scrolling stops (150ms delay)
+      scrollTimeoutRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+        setIsVisible(true);
+      }, 150);
     };
 
-    scrollable.addEventListener('scroll', handleScroll, { passive: true });
-    return () => scrollable.removeEventListener('scroll', handleScroll);
+    if (scrollable) {
+      scrollable.addEventListener('scroll', handleScroll, { passive: true });
+      return () => {
+        scrollable.removeEventListener('scroll', handleScroll);
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+      };
+    } else {
+      // Fallback to window scroll
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        if (scrollTimeoutRef.current) {
+          clearTimeout(scrollTimeoutRef.current);
+        }
+      };
+    }
   }, []);
 
   return isVisible;
