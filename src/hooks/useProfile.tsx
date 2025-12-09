@@ -63,8 +63,8 @@ export const useProfile = () => {
             full_name: user.user_metadata?.full_name || null,
             dharma_points: 0,
             current_level: 1,
-            app_streak: 1,
-            sin_free_streak: 1,
+            app_streak: 0,
+            sin_free_streak: 0,
             last_activity_date: new Date().toISOString().split('T')[0]
           })
           .select()
@@ -120,12 +120,14 @@ export const useProfile = () => {
     }
   };
 
-  const addDharmaPoints = async (points: number) => {
+  const addDharmaPoints = async (points: number): Promise<{ error?: unknown; leveledUp?: boolean; newLevel?: number }> => {
     if (!profile || !user) return { error: 'No profile found' };
     
     const newPoints = profile.dharma_points + points;
+    const oldLevel = profile.current_level;
     // Level increases every 100 DP (level 1 = 0-99, level 2 = 100-199, etc.)
     const newLevel = Math.floor(newPoints / 100) + 1;
+    const leveledUp = newLevel > oldLevel;
     
     // Update local state immediately for optimistic UI
     const updatedProfile = {
@@ -161,7 +163,7 @@ export const useProfile = () => {
       const finalProfile = data as UserProfile;
       cachedProfile = finalProfile;
       setProfile(finalProfile);
-      return { data: finalProfile, error: null };
+      return { leveledUp, newLevel, error: null };
     } catch (error) {
       console.error('Error updating dharma points:', error);
       // Revert on error
@@ -201,7 +203,7 @@ export const useProfile = () => {
       // Streak broken - reset app streak to 1, but keep sin-free streak if they haven't logged a sin
       newAppStreak = 1;
       // Sin-free streak continues unless user logs a sin
-      newSinFreeStreak = profile.sin_free_streak + 1;
+      newSinFreeStreak = profile.sin_free_streak;
     }
     
     const updates = {

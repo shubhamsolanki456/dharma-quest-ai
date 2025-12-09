@@ -25,7 +25,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/pricing');
+      navigate('/onboarding');
     }
   }, [user, loading, navigate]);
 
@@ -101,7 +101,7 @@ const Auth = () => {
             <Flower2 className="h-8 w-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold bg-gradient-saffron bg-clip-text text-transparent">
-            Bhagvad AI
+            Dharma AI
           </h1>
           <p className="text-muted-foreground mt-2">
             Begin your spiritual journey

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Check, MoreVertical, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { LevelUpCelebration } from "@/components/LevelUpCelebration";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,8 @@ const Quests = () => {
   const [newHabit, setNewHabit] = useState({ title: '', description: '', target_value: 1, unit: '' });
   const [currentDate, setCurrentDate] = useState(getISTDate());
   const [isLoading, setIsLoading] = useState(true);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(1);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -328,7 +331,13 @@ const Quests = () => {
         setCompletedHabits(prev => [...prev, habit.id]);
         
         // Award 10 DP per habit completion
-        await addDharmaPoints(10);
+        const result = await addDharmaPoints(10);
+        
+        // Check for level up
+        if (result.leveledUp && result.newLevel) {
+          setNewLevel(result.newLevel);
+          setShowLevelUp(true);
+        }
         
         toast({ 
           title: `+10 Dharma Points earned! 🙏`,
@@ -618,6 +627,13 @@ const Quests = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Level Up Celebration */}
+        <LevelUpCelebration
+          isOpen={showLevelUp}
+          onClose={() => setShowLevelUp(false)}
+          newLevel={newLevel}
+        />
       </div>
     </MobileLayout>
   );

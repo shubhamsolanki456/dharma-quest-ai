@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, ArrowLeft, CheckCircle, Flower2, Sun, Moon, Heart, BookOpen, Zap } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
+import { ArrowRight, ArrowLeft, CheckCircle, Flower2, Sun, Heart, BookOpen, Zap } from 'lucide-react';
 
 interface Question {
   id: string;
@@ -64,62 +66,12 @@ const spiritualQuestions: Question[] = [
       { value: '60', label: '1+ Hours', icon: '🕑' },
     ],
   },
-  {
-    id: 'deity',
-    question: 'Which deities do you connect with?',
-    options: [
-      { value: 'krishna', label: 'Lord Krishna', icon: '🦚' },
-      { value: 'shiva', label: 'Lord Shiva', icon: '🔱' },
-      { value: 'hanuman', label: 'Lord Hanuman', icon: '🐵' },
-      { value: 'durga', label: 'Maa Durga', icon: '🌸' },
-    ],
-    multiSelect: true,
-  },
-  {
-    id: 'challenges',
-    question: 'What challenges do you face in spiritual practice?',
-    options: [
-      { value: 'consistency', label: 'Staying Consistent', icon: '📅' },
-      { value: 'focus', label: 'Maintaining Focus', icon: '🎯' },
-      { value: 'time', label: 'Finding Time', icon: '⏳' },
-      { value: 'guidance', label: 'Lack of Guidance', icon: '🧭' },
-    ],
-    multiSelect: true,
-  },
-  {
-    id: 'sins',
-    question: 'Would you like to track and overcome bad habits?',
-    options: [
-      { value: 'yes', label: 'Yes, Help Me Improve', icon: '✅' },
-      { value: 'maybe', label: 'Maybe Later', icon: '🤔' },
-      { value: 'no', label: 'Not Interested', icon: '❌' },
-    ],
-  },
-  {
-    id: 'reminder',
-    question: 'Would you like daily spiritual reminders?',
-    options: [
-      { value: 'yes', label: 'Yes, Please!', icon: '🔔' },
-      { value: 'sometimes', label: 'Occasionally', icon: '📬' },
-      { value: 'no', label: 'No Thanks', icon: '🔕' },
-    ],
-  },
-  {
-    id: 'language',
-    question: 'Preferred language for scriptures?',
-    options: [
-      { value: 'english', label: 'English Only', icon: '🇬🇧' },
-      { value: 'hindi', label: 'Hindi', icon: '🇮🇳' },
-      { value: 'sanskrit', label: 'Sanskrit with Translation', icon: '📿' },
-      { value: 'both', label: 'All Languages', icon: '🌐' },
-    ],
-  },
 ];
 
 const introSteps = [
   {
     title: "प्रणिपात",
-    subtitle: "Welcome to Bhagvad AI",
+    subtitle: "Welcome to Dharma AI",
     content: (
       <div className="text-center space-y-6">
         <div className="bg-gradient-saffron p-6 rounded-full w-fit mx-auto animate-float">
@@ -156,24 +108,28 @@ const introSteps = [
     )
   },
   {
-    title: "AI Scripture Guide",
-    subtitle: "Ancient Wisdom, Modern Insights",
+    title: "14-Day Free Trial",
+    subtitle: "No Credit Card Required",
     content: (
       <div className="space-y-4">
-        <div className="bg-dharma/10 p-4 rounded-xl border border-dharma/20">
+        <div className="bg-gradient-to-br from-saffron/10 to-dharma/10 p-4 rounded-xl border border-saffron/20">
           <BookOpen className="h-6 w-6 text-dharma mb-2" />
           <ul className="space-y-2 text-sm">
+            <li className="flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-dharma" />
+              Full access for 14 days
+            </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-dharma" />
               700 Bhagavad Gita Shlokas
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-dharma" />
-              Daily personalized wisdom
+              AI-powered scripture guidance
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-dharma" />
-              AI answers from scriptures
+              Completely free to start
             </li>
           </ul>
         </div>
@@ -185,19 +141,58 @@ const introSteps = [
 const Onboarding = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [isCompleting, setIsCompleting] = useState(false);
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { subscription, createTrialSubscription, completeOnboarding, loading: subLoading } = useSubscription();
 
   const totalSteps = introSteps.length + spiritualQuestions.length;
   const isIntroPhase = currentStep < introSteps.length;
   const questionIndex = currentStep - introSteps.length;
 
+  // Redirect if no user or already completed onboarding
+  useEffect(() => {
+    if (authLoading || subLoading) return;
+    
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    if (subscription?.has_completed_onboarding) {
+      navigate('/pricing');
+    }
+  }, [user, subscription, authLoading, subLoading, navigate]);
+
+  const handleComplete = async () => {
+    setIsCompleting(true);
+    
+    try {
+      // Save onboarding answers
+      localStorage.setItem('onboardingAnswers', JSON.stringify(answers));
+      
+      // Create trial subscription if doesn't exist
+      if (!subscription) {
+        await createTrialSubscription();
+      }
+      
+      // Mark onboarding as complete
+      await completeOnboarding();
+      
+      // Navigate to pricing
+      navigate('/pricing');
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
   const nextStep = () => {
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Save answers and navigate to auth
-      localStorage.setItem('onboardingAnswers', JSON.stringify(answers));
-      navigate('/auth');
+      handleComplete();
     }
   };
 
@@ -239,6 +234,14 @@ const Onboarding = () => {
   };
 
   const progress = ((currentStep + 1) / totalSteps) * 100;
+
+  if (authLoading || subLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -309,7 +312,7 @@ const Onboarding = () => {
           <Button
             variant="outline"
             onClick={prevStep}
-            disabled={currentStep === 0}
+            disabled={currentStep === 0 || isCompleting}
             className="flex-1"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -319,22 +322,17 @@ const Onboarding = () => {
           <Button
             onClick={nextStep}
             variant="saffron"
-            disabled={!canProceed()}
+            disabled={!canProceed() || isCompleting}
             className="flex-1"
           >
-            {currentStep === totalSteps - 1 ? 'Get Started' : 'Next'}
-            <ArrowRight className="h-4 w-4 ml-2" />
-          </Button>
-        </div>
-
-        {/* Skip */}
-        <div className="text-center mt-4">
-          <Button
-            variant="link"
-            onClick={() => navigate('/auth')}
-            className="text-xs text-muted-foreground"
-          >
-            Skip onboarding
+            {isCompleting ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            ) : currentStep === totalSteps - 1 ? (
+              'Start Free Trial'
+            ) : (
+              'Next'
+            )}
+            {!isCompleting && <ArrowRight className="h-4 w-4 ml-2" />}
           </Button>
         </div>
       </Card>
