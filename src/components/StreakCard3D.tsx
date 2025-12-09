@@ -11,11 +11,10 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
   const navigate = useNavigate();
   const { triggerHaptic } = useHaptics();
   
-  // Calculate dedication: 1 star per 7 days of combined streaks (max 5)
-  const totalDays = appStreak + sinFreeStreak;
-  const totalDedication = Math.min(Math.floor(totalDays / 7), 5);
+  // Calculate dedication: 1 star per 7 days of APP STREAK ONLY (max 5)
+  const totalDedication = Math.min(Math.floor(appStreak / 7), 5);
   // If no streaks yet, show at least indication of progress towards first star
-  const showProgress = totalDays > 0 && totalDedication === 0;
+  const showProgress = appStreak > 0 && totalDedication === 0;
   
   const handleClick = () => {
     triggerHaptic('medium');
@@ -79,7 +78,7 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
                 />
               ))}
               {showProgress && (
-                <span className="text-white/60 text-xs ml-2">({totalDays}/7 days)</span>
+                <span className="text-white/60 text-xs ml-2">({appStreak}/7 days)</span>
               )}
             </div>
           </div>

@@ -135,6 +135,76 @@ export class NotificationScheduler {
     scheduleNext();
   }
 
+  // Schedule a notification for a specific date/time
+  scheduleOnce(id: string, date: Date, title: string, body: string) {
+    this.cancel(id);
+
+    const now = new Date();
+    const delay = date.getTime() - now.getTime();
+
+    if (delay <= 0) return; // Don't schedule if time has passed
+
+    const timeoutId = setTimeout(() => {
+      if (Notification.permission === 'granted') {
+        new Notification(title, {
+          body,
+          icon: '/favicon.ico',
+          badge: '/favicon.ico',
+          tag: id
+        });
+      }
+      this.scheduledNotifications.delete(id);
+    }, delay);
+
+    this.scheduledNotifications.set(id, timeoutId);
+  }
+
+  // Schedule trial expiry reminders
+  scheduleTrialExpiryReminders(trialEndDate: Date) {
+    const now = new Date();
+    
+    // 3 days before expiry
+    const threeDaysBefore = new Date(trialEndDate);
+    threeDaysBefore.setDate(threeDaysBefore.getDate() - 3);
+    threeDaysBefore.setHours(10, 0, 0, 0);
+    
+    if (threeDaysBefore > now) {
+      this.scheduleOnce(
+        'trial-expiry-3days',
+        threeDaysBefore,
+        '⏳ 3 Days Left in Your Trial!',
+        'Your free trial ends in 3 days. Subscribe now to continue your spiritual journey.'
+      );
+    }
+
+    // 1 day before expiry
+    const oneDayBefore = new Date(trialEndDate);
+    oneDayBefore.setDate(oneDayBefore.getDate() - 1);
+    oneDayBefore.setHours(10, 0, 0, 0);
+    
+    if (oneDayBefore > now) {
+      this.scheduleOnce(
+        'trial-expiry-1day',
+        oneDayBefore,
+        '⚠️ Trial Expires Tomorrow!',
+        'Don\'t lose access to your spiritual tools. Subscribe today to keep your progress.'
+      );
+    }
+
+    // On expiry day
+    const expiryDay = new Date(trialEndDate);
+    expiryDay.setHours(9, 0, 0, 0);
+    
+    if (expiryDay > now) {
+      this.scheduleOnce(
+        'trial-expiry-today',
+        expiryDay,
+        '🔒 Your Trial Ends Today',
+        'Subscribe now to continue your dharmic journey with full access.'
+      );
+    }
+  }
+
   cancel(id: string) {
     const existing = this.scheduledNotifications.get(id);
     if (existing) {
