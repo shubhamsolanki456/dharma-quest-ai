@@ -11,9 +11,9 @@ interface BottomNavigationProps {
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/dashboard' },
-  { icon: BookOpen, label: 'Shlok', path: '/daily-shlok' },
-  { icon: Target, label: 'Quests', path: '/quests' },
   { icon: MessageCircle, label: 'Chat', path: '/ai-guide' },
+  { icon: Target, label: 'Quests', path: '/quests' },
+  { icon: BookOpen, label: 'Shlok', path: '/daily-shlok' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 
