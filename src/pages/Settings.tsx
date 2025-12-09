@@ -3,7 +3,9 @@ import { MobileLayout } from '@/components/MobileLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import {
@@ -20,7 +22,9 @@ import {
   User,
   Crown,
   Mail,
-  Instagram
+  Instagram,
+  Sparkles,
+  Calendar
 } from 'lucide-react';
 
 interface SettingItemProps {
@@ -33,7 +37,6 @@ interface SettingItemProps {
 }
 
 const SettingItem = ({ icon: Icon, label, description, onClick, rightElement, danger }: SettingItemProps) => {
-  // If rightElement is provided (like Switch), render as div to avoid button nesting
   if (rightElement) {
     return (
       <div
@@ -71,6 +74,7 @@ const SettingItem = ({ icon: Icon, label, description, onClick, rightElement, da
 const Settings = () => {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { subscription, hasActiveAccess, getDaysRemaining } = useSubscription();
   
   // Settings state
   const [notifications, setNotifications] = useState(true);
@@ -80,7 +84,7 @@ const Settings = () => {
 
   useEffect(() => {
     // Load settings from localStorage
-    const savedSettings = localStorage.getItem('bhagvad_settings');
+    const savedSettings = localStorage.getItem('dharma_settings');
     if (savedSettings) {
       const settings = JSON.parse(savedSettings);
       setNotifications(settings.notifications ?? true);
@@ -91,9 +95,9 @@ const Settings = () => {
   }, []);
 
   const saveSettings = (key: string, value: boolean) => {
-    const savedSettings = JSON.parse(localStorage.getItem('bhagvad_settings') || '{}');
+    const savedSettings = JSON.parse(localStorage.getItem('dharma_settings') || '{}');
     savedSettings[key] = value;
-    localStorage.setItem('bhagvad_settings', JSON.stringify(savedSettings));
+    localStorage.setItem('dharma_settings', JSON.stringify(savedSettings));
   };
 
   const handleNotificationsToggle = (checked: boolean) => {
@@ -145,6 +149,57 @@ const Settings = () => {
     toast.success('Signed out successfully');
   };
 
+  // Get subscription display info
+  const getSubscriptionInfo = () => {
+    if (!subscription) return { status: 'No Plan', color: 'bg-muted', textColor: 'text-muted-foreground' };
+    
+    const daysLeft = getDaysRemaining();
+    const isActive = hasActiveAccess();
+    
+    if (subscription.plan_type === 'trial') {
+      if (isActive) {
+        return { 
+          status: `Trial • ${daysLeft} days left`, 
+          color: 'bg-green-500/20', 
+          textColor: 'text-green-500',
+          icon: Clock
+        };
+      } else {
+        return { 
+          status: 'Trial Expired', 
+          color: 'bg-red-500/20', 
+          textColor: 'text-red-500',
+          icon: Clock
+        };
+      }
+    }
+    
+    const planNames: Record<string, string> = {
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      yearly: 'Yearly'
+    };
+    
+    if (isActive) {
+      return { 
+        status: `${planNames[subscription.plan_type]} • ${daysLeft} days left`, 
+        color: 'bg-saffron/20', 
+        textColor: 'text-saffron',
+        icon: Crown
+      };
+    }
+    
+    return { 
+      status: 'Subscription Expired', 
+      color: 'bg-red-500/20', 
+      textColor: 'text-red-500',
+      icon: Clock
+    };
+  };
+
+  const subInfo = getSubscriptionInfo();
+  const isTrialOrExpired = !subscription || subscription.plan_type === 'trial' || !hasActiveAccess();
+
   return (
     <MobileLayout currentPage="/settings">
       <div className="p-4 space-y-6 pb-32">
@@ -174,18 +229,29 @@ const Settings = () => {
           </Card>
         )}
 
-        {/* Subscription */}
-        <Card className="card-3d-subtle p-4 rounded-xl bg-gradient-to-r from-saffron/10 to-dharma/10">
+        {/* Subscription Status Badge */}
+        <Card className={`card-3d-subtle p-4 rounded-xl ${isTrialOrExpired ? 'bg-gradient-to-r from-saffron/10 to-dharma/10' : ''}`}>
           <div className="flex items-center gap-4">
-            <div className="p-2 rounded-lg bg-dharma/20">
-              <Crown className="h-6 w-6 text-dharma" />
+            <div className={`p-2 rounded-lg ${subInfo.color}`}>
+              {subInfo.icon ? <subInfo.icon className={`h-6 w-6 ${subInfo.textColor}`} /> : <Crown className={`h-6 w-6 ${subInfo.textColor}`} />}
             </div>
             <div className="flex-1">
-              <p className="font-display text-foreground">Upgrade to Premium</p>
-              <p className="text-xs text-muted-foreground">Unlock all features</p>
+              <div className="flex items-center gap-2">
+                <p className="font-display text-foreground">Subscription</p>
+                <Badge className={`${subInfo.color} ${subInfo.textColor} border-0`}>
+                  {subInfo.status}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isTrialOrExpired ? 'Upgrade for full access' : 'Full access enabled'}
+              </p>
             </div>
-            <Button variant="saffron" size="sm" onClick={() => navigate('/pricing')}>
-              Upgrade
+            <Button 
+              variant={isTrialOrExpired ? "saffron" : "outline"} 
+              size="sm" 
+              onClick={() => navigate('/pricing')}
+            >
+              {isTrialOrExpired ? 'Upgrade' : 'Manage'}
             </Button>
           </div>
         </Card>

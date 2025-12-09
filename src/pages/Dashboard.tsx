@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { usePushNotifications, NotificationScheduler, SPIRITUAL_NOTIFICATIONS } from '@/hooks/usePushNotifications';
 import { toast } from 'sonner';
 import { shlokas, getTodaysShloka } from '@/data/shlokas';
@@ -65,6 +66,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { profile, addDharmaPoints, updateStreak } = useProfile();
+  const { subscription, hasActiveAccess } = useSubscription();
   const { permission, isSupported, requestPermission } = usePushNotifications();
   const dpContainerRef = useRef<HTMLDivElement>(null);
   
@@ -149,11 +151,18 @@ const Dashboard = () => {
   useEffect(() => {
     if (permission === 'granted') {
       const scheduler = NotificationScheduler.getInstance();
+      
+      // Schedule daily spiritual notifications
       Object.values(SPIRITUAL_NOTIFICATIONS).forEach(notif => {
         scheduler.scheduleDaily(notif.id, notif.hour, notif.minute, notif.title, notif.body);
       });
+
+      // Schedule trial expiry notifications if on trial
+      if (subscription?.plan_type === 'trial' && subscription.trial_end_date) {
+        scheduler.scheduleTrialExpiryReminders(new Date(subscription.trial_end_date));
+      }
     }
-  }, [permission]);
+  }, [permission, subscription]);
 
   const handleQuestComplete = async (questId: number, event: React.MouseEvent) => {
     const quest = quests.find(q => q.id === questId);

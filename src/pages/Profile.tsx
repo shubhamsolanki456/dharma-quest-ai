@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useSubscription } from "@/hooks/useSubscription";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ interface Stats {
 const Profile = () => {
   const { user, signOut, loading } = useAuth();
   const { profile } = useProfile();
+  const { subscription, hasActiveAccess, getDaysRemaining } = useSubscription();
   const navigate = useNavigate();
   const [stats, setStats] = useState<Stats>({
     totalMeditations: 0,
@@ -145,11 +147,26 @@ const Profile = () => {
                 {profile?.full_name || user.email?.split('@')[0] || 'Seeker'}
               </h1>
               <p className="text-sm text-muted-foreground">{user.email}</p>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <Badge className="bg-gradient-saffron text-primary-foreground">
                   <Crown className="h-3 w-3 mr-1" />
                   Level {profile?.current_level || 1}
                 </Badge>
+                {subscription && (
+                  <Badge 
+                    className={`${
+                      subscription.plan_type === 'trial' 
+                        ? 'bg-green-500/20 text-green-500' 
+                        : 'bg-saffron/20 text-saffron'
+                    } border-0`}
+                  >
+                    <Clock className="h-3 w-3 mr-1" />
+                    {subscription.plan_type === 'trial' 
+                      ? `Trial • ${getDaysRemaining()} days` 
+                      : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`
+                    }
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
