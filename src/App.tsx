@@ -24,6 +24,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import SinLog from "./pages/SinLog";
 import NotFound from "./pages/NotFound";
+import Prayers from "./pages/Prayers";
 
 const queryClient = new QueryClient();
 
@@ -35,11 +36,18 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/landing" element={<Landing />} />
-            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            
+            {/* Auth required routes */}
+            <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/pricing" element={<Pricing />} />
+            
+            {/* Protected routes (subscription required) */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/ai-guide" element={<AIGuide />} />
             <Route path="/quests" element={<Quests />} />
@@ -51,10 +59,10 @@ const App = () => (
             <Route path="/mantra-jaap" element={<MantraJaap />} />
             <Route path="/voice-log" element={<VoiceLog />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/sin-log" element={<SinLog />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/prayers" element={<Prayers />} />
+            
+            {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
