@@ -20,7 +20,7 @@ const Pricing = () => {
       id: 'weekly',
       name: 'Weekly',
       price: '₹99',
-      period: 'per week',
+      period: 'week',
       description: 'Try the full experience',
       features: [
         'Unlimited AI Scripture Chat',
@@ -38,14 +38,16 @@ const Pricing = () => {
       id: 'monthly',
       name: 'Monthly',
       price: '₹199',
-      period: 'per month',
+      originalPrice: '₹499',
+      period: 'month',
       description: 'Most popular choice',
+      savings: 'Save 60%',
       features: [
-        'Everything in Weekly',
-        'Priority support',
-        'Offline scripture access',
-        'Custom prayer reminders',
-        'Sanskrit learning modules'
+        'Unlimited AI Scripture Chat',
+        'Advanced streak tracking',
+        'Daily personalized quests',
+        'Sin tracking & redemption',
+        'Detailed progress analytics'
       ],
       buttonText: 'Start Monthly Plan',
       icon: Sparkles,
@@ -57,17 +59,16 @@ const Pricing = () => {
       id: 'yearly',
       name: 'Yearly',
       price: '₹1,999',
-      period: 'per year',
+      originalPrice: '₹2,499',
+      period: 'year',
       description: 'Best value for seekers',
-      originalPrice: '₹2,388',
-      savings: 'Save ₹389',
+      savings: 'Save 20%',
       features: [
-        'Everything in Monthly',
-        'Exclusive premium content',
-        'Personal spiritual mentor',
-        'Advanced achievements',
-        'Community access',
-        'Lifetime updates'
+        'Unlimited AI Scripture Chat',
+        'Advanced streak tracking',
+        'Daily personalized quests',
+        'Sin tracking & redemption',
+        'Detailed progress analytics'
       ],
       buttonText: 'Start Yearly Plan',
       icon: Crown,
@@ -154,7 +155,7 @@ const Pricing = () => {
           ) : !subscription && (
             <div className="bg-gradient-to-r from-saffron/10 to-dharma/10 border border-saffron/30 rounded-xl p-4 max-w-md mx-auto">
               <p className="text-sm">
-                🎁 <strong>14-Day Free Trial</strong> • No credit card required
+                🎁 <strong>7-Day Free Trial</strong> • No credit card required
               </p>
             </div>
           )}
