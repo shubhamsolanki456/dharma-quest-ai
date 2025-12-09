@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 
+// Trial duration constant - 7 days
+export const TRIAL_DURATION_DAYS = 7;
+
 interface NotificationPermissionState {
   permission: NotificationPermission;
   isSupported: boolean;
