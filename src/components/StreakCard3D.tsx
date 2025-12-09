@@ -1,4 +1,5 @@
 import { Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface StreakCard3DProps {
   appStreak: number;
@@ -6,10 +7,14 @@ interface StreakCard3DProps {
 }
 
 export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) => {
+  const navigate = useNavigate();
   const totalDedication = Math.min(Math.floor((appStreak + sinFreeStreak) / 4), 5);
   
   return (
-    <div className="rounded-2xl overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.5)] min-h-[180px]">
+    <div 
+      className="rounded-2xl overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.5)] min-h-[180px] cursor-pointer"
+      onClick={() => navigate('/sin-log')}
+    >
       {/* Background image with inline style for reliability */}
       <div 
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
@@ -63,7 +68,7 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
         
         {/* Motivational quote */}
         <div className="flex items-center justify-center pt-3 border-t border-white/20">
-          <span className="text-white/80 text-sm font-sans italic text-center">"Your daily sadhana shapes your destiny"</span>
+          <span className="text-white/80 text-sm font-sans italic text-center">"Tap to manage your sin-free journey"</span>
         </div>
       </div>
     </div>

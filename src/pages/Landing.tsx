@@ -20,7 +20,7 @@ const Landing = () => {
           
           {/* Title */}
           <h1 className="text-5xl md:text-7xl font-display bg-gradient-saffron bg-clip-text text-transparent mb-4">
-            Bhagvad AI
+            Dharma AI
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-xl mx-auto">
             Your AI-powered spiritual companion for authentic Hindu wisdom, habit tracking, and dharmic living
