@@ -1,0 +1,271 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Font */
+@font-face {
+  font-family: 'Helvetica Neue Extended';
+  src: url('/fonts/Helvetica_Neue_LT_Pro_73_Bold_Extended.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Hindu-inspired color palette */
+    --background: 240 10% 3.9%;
+    --foreground: 35 40% 98%;
+
+    --card: 240 8% 7%;
+    --card-foreground: 35 40% 98%;
+
+    --popover: 240 8% 7%;
+    --popover-foreground: 35 40% 98%;
+
+    /* Saffron primary */
+    --primary: 33 100% 50%;
+    --primary-foreground: 240 10% 3.9%;
+
+    /* Deep spiritual blue secondary */
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 35 40% 98%;
+
+    --muted: 240 8% 12%;
+    --muted-foreground: 240 5% 65%;
+
+    /* Lotus pink accent */
+    --accent: 310 85% 70%;
+    --accent-foreground: 240 10% 3.9%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 8% 12%;
+    --input: 240 8% 12%;
+    --ring: 33 100% 50%;
+
+    --radius: 1rem;
+
+    /* Custom spiritual colors */
+    --saffron: 33 100% 50%;
+    --saffron-light: 35 100% 65%;
+    --saffron-dark: 28 100% 40%;
+    
+    --spiritual: 217 32% 17%;
+    --spiritual-blue: 217 32% 17%;
+    --spiritual-blue-light: 217 32% 25%;
+    
+    --lotus: 310 85% 70%;
+    --lotus-pink: 310 85% 70%;
+    --lotus-pink-light: 310 85% 80%;
+    
+    --dharma: 45 100% 60%;
+    --dharma-gold: 45 100% 60%;
+    --dharma-gold-light: 45 100% 70%;
+
+    /* Gradients */
+    --gradient-saffron: linear-gradient(135deg, hsl(var(--saffron)), hsl(var(--saffron-light)));
+    --gradient-spiritual: linear-gradient(135deg, hsl(var(--spiritual-blue)), hsl(var(--spiritual-blue-light)));
+    --gradient-lotus: linear-gradient(135deg, hsl(var(--lotus-pink)), hsl(var(--lotus-pink-light)));
+    --gradient-dharma: linear-gradient(135deg, hsl(var(--dharma-gold)), hsl(var(--dharma-gold-light)));
+    --gradient-sunrise: linear-gradient(135deg, hsl(var(--saffron)), hsl(var(--dharma-gold)));
+
+    /* Shadows with spiritual glow */
+    --shadow-saffron: 0 8px 25px hsl(var(--saffron) / 0.25);
+    --shadow-lotus: 0 8px 25px hsl(var(--lotus-pink) / 0.25);
+    --shadow-dharma: 0 8px 25px hsl(var(--dharma-gold) / 0.25);
+
+    /* Animations */
+    --transition-spiritual: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --animation-float: float 3s ease-in-out infinite;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    /* Dark mode uses same spiritual theme */
+    --background: 240 10% 3.9%;
+    --foreground: 35 40% 98%;
+
+    --card: 240 8% 7%;
+    --card-foreground: 35 40% 98%;
+
+    --popover: 240 8% 7%;
+    --popover-foreground: 35 40% 98%;
+
+    --primary: 33 100% 50%;
+    --primary-foreground: 240 10% 3.9%;
+
+    --secondary: 217 32% 17%;
+    --secondary-foreground: 35 40% 98%;
+
+    --muted: 240 8% 12%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 310 85% 70%;
+    --accent-foreground: 240 10% 3.9%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 8% 12%;
+    --input: 240 8% 12%;
+    --ring: 33 100% 50%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  /* Spiritual gradients */
+  .bg-gradient-saffron {
+    background: var(--gradient-saffron);
+  }
+  
+  .bg-gradient-spiritual {
+    background: var(--gradient-spiritual);
+  }
+  
+  .bg-gradient-lotus {
+    background: var(--gradient-lotus);
+  }
+  
+  .bg-gradient-dharma {
+    background: var(--gradient-dharma);
+  }
+  
+  .bg-gradient-sunrise {
+    background: var(--gradient-sunrise);
+  }
+
+  .bg-gradient-radial {
+    background: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+
+  /* 3D Card Styles */
+  .card-3d {
+    background: linear-gradient(145deg, hsl(240 8% 10%) 0%, hsl(240 8% 6%) 100%);
+    box-shadow: 
+      0 4px 6px -1px hsl(0 0% 0% / 0.3),
+      0 10px 20px -5px hsl(0 0% 0% / 0.4),
+      0 25px 50px -12px hsl(0 0% 0% / 0.5),
+      inset 0 1px 0 hsl(0 0% 100% / 0.05);
+    border: 1px solid hsl(0 0% 100% / 0.05);
+    transform: perspective(1000px) rotateX(2deg);
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .card-3d:hover {
+    transform: perspective(1000px) rotateX(0deg) translateY(-2px);
+    box-shadow: 
+      0 8px 12px -2px hsl(0 0% 0% / 0.35),
+      0 16px 30px -8px hsl(0 0% 0% / 0.45),
+      0 32px 60px -16px hsl(0 0% 0% / 0.55),
+      inset 0 1px 0 hsl(0 0% 100% / 0.08);
+  }
+
+  .card-3d-subtle {
+    background: linear-gradient(145deg, hsl(240 8% 9%) 0%, hsl(240 8% 6%) 100%);
+    box-shadow: 
+      0 2px 4px hsl(0 0% 0% / 0.2),
+      0 8px 16px -4px hsl(0 0% 0% / 0.3),
+      inset 0 1px 0 hsl(0 0% 100% / 0.03);
+    border: 1px solid hsl(0 0% 100% / 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card-3d-subtle:hover {
+    transform: translateY(-1px);
+    box-shadow: 
+      0 4px 8px hsl(0 0% 0% / 0.25),
+      0 12px 24px -6px hsl(0 0% 0% / 0.35),
+      inset 0 1px 0 hsl(0 0% 100% / 0.05);
+  }
+
+  /* Spiritual shadows */
+  .shadow-saffron {
+    box-shadow: var(--shadow-saffron);
+  }
+  
+  .shadow-lotus {
+    box-shadow: var(--shadow-lotus);
+  }
+  
+  .shadow-dharma {
+    box-shadow: var(--shadow-dharma);
+  }
+
+  /* Spiritual animations */
+  .transition-spiritual {
+    transition: var(--transition-spiritual);
+  }
+
+  .animate-float {
+    animation: var(--animation-float);
+  }
+
+  /* Mobile-first utilities */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Preload streak card background */
+.preload-streak-bg::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  background-image: url('/assets/streak-card-bg.jpg');
+  background-size: 0 0;
+}
