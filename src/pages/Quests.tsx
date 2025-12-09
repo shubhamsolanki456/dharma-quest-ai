@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Check, Star, Pencil, Trash2 } from "lucide-react";
+import { Plus, Check, MoreVertical, Trash2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -355,37 +356,24 @@ const Quests = () => {
 
   return (
     <MobileLayout currentPage="/quests">
-      <div className="space-y-4 pb-32 p-4">
+      <div className="space-y-6 pb-32 p-4">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-display text-foreground">Daily Quests</h1>
+            <h2 className="text-2xl font-display text-foreground">Today's Quests</h2>
             <p className="text-muted-foreground text-sm">
-              {completedCount}/{totalHabits} completed • {completedCount * 10} DP earned
+              Complete quests to earn Dharma Points
             </p>
           </div>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setShowAddDialog(true)}
-            className="h-10 w-10 rounded-full bg-saffron/10 text-saffron hover:bg-saffron/20"
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-muted rounded-full h-1.5">
-          <motion.div 
-            className="bg-saffron h-1.5 rounded-full"
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
-          />
+          <div className="bg-muted rounded-full px-3 py-1.5">
+            <span className="text-sm font-medium text-foreground">
+              {completedCount}/{totalHabits} completed
+            </span>
+          </div>
         </div>
 
         {/* Quest List */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <AnimatePresence>
             {habits.map((habit, index) => {
               const isCompleted = completedHabits.includes(habit.id);
@@ -393,75 +381,101 @@ const Quests = () => {
               return (
                 <motion.div
                   key={habit.id}
-                  initial={{ opacity: 0, y: 10 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="bg-card border border-border rounded-xl p-4 transition-all hover:scale-[1.01]"
+                  transition={{ delay: index * 0.1 }}
+                  className={`rounded-3xl p-4 flex items-center justify-between ${
+                    isCompleted ? 'bg-muted/70' : 'bg-card border border-border'
+                  }`}
                 >
-                  <div className="flex items-start gap-3">
-                    {/* Checkbox */}
+                  <div className="flex items-center gap-4">
+                    {/* Three-dot menu */}
                     <button
-                      onClick={() => handleToggleHabit(habit)}
-                      className={`mt-0.5 h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                        isCompleted 
-                          ? 'bg-saffron border-saffron' 
-                          : 'border-muted-foreground hover:border-saffron'
-                      }`}
+                      onClick={() => {
+                        setEditingHabit(habit);
+                        setShowEditDialog(true);
+                      }}
+                      className="text-muted-foreground hover:text-foreground"
                     >
-                      {isCompleted && <Check className="h-4 w-4 text-white" />}
+                      <MoreVertical className="h-5 w-5" />
                     </button>
                     
-                    {/* Content */}
-                    <div 
-                      className="flex-1 cursor-pointer"
-                      onClick={() => handleToggleHabit(habit)}
-                    >
-                      <h4 className={`font-medium ${isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
-                        {habit.title}
-                      </h4>
-                      <p className="text-sm text-muted-foreground mt-0.5">
-                        {habit.description}
-                      </p>
-                    </div>
+                    {/* Emoji */}
+                    <span className="text-3xl">
+                      {habit.icon || getAutoEmoji(habit.title)}
+                    </span>
                     
-                    {/* Points & Actions */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 text-dharma">
-                        <Star className="h-4 w-4 fill-current" />
-                        <span className="text-sm font-medium">+10</span>
+                    {/* Title and Description */}
+                    <div>
+                      <div className="relative">
+                        <motion.span
+                          className={`text-lg font-semibold ${isCompleted ? 'text-muted-foreground' : 'text-foreground'}`}
+                          initial={false}
+                          animate={{ opacity: isCompleted ? 0.7 : 1 }}
+                        >
+                          {habit.title}
+                        </motion.span>
+                        {isCompleted && (
+                          <motion.div
+                            className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted-foreground"
+                            initial={{ scaleX: 0, originX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ duration: 0.3 }}
+                          />
+                        )}
                       </div>
-                      <div className="flex items-center">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingHabit(habit);
-                            setShowEditDialog(true);
-                          }}
+                      <div className="relative">
+                        <motion.span
+                          className={`text-sm ${isCompleted ? 'text-muted-foreground' : 'text-muted-foreground'}`}
+                          initial={false}
+                          animate={{ opacity: isCompleted ? 0.7 : 1 }}
                         >
-                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingHabit(habit);
-                            setShowDeleteDialog(true);
-                          }}
-                        >
-                          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
+                          {habit.target_value} {habit.unit} • +10 DP
+                        </motion.span>
+                        {isCompleted && (
+                          <motion.div
+                            className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted-foreground"
+                            initial={{ scaleX: 0, originX: 0 }}
+                            animate={{ scaleX: 1 }}
+                            transition={{ duration: 0.3, delay: 0.1 }}
+                          />
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {habit.description}
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Toggle Button */}
+                  <Button
+                    className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                      isCompleted
+                        ? 'bg-muted hover:bg-muted/80'
+                        : 'bg-saffron hover:bg-saffron/80'
+                    }`}
+                    onClick={() => handleToggleHabit(habit)}
+                  >
+                    {isCompleted ? (
+                      <Check className="h-6 w-6 text-foreground" />
+                    ) : (
+                      <Plus className="h-6 w-6 text-white" />
+                    )}
+                  </Button>
                 </motion.div>
               );
             })}
           </AnimatePresence>
+
+          {/* Add Custom Quest Button */}
+          <Button
+            variant="outline"
+            className="w-full rounded-3xl py-6 border-2 border-dashed border-border bg-card text-foreground hover:bg-muted hover:text-foreground flex items-center justify-center gap-2"
+            onClick={() => setShowAddDialog(true)}
+          >
+            <Plus className="h-6 w-6" />
+            Add custom quest
+          </Button>
         </div>
 
         {habits.length === 0 && (
@@ -470,90 +484,119 @@ const Quests = () => {
           </div>
         )}
 
-        {/* Add Habit Dialog */}
+        {/* Add Quest Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-[320px] p-4">
+          <DialogContent className="max-w-[320px]">
             <DialogHeader>
-              <DialogTitle className="text-lg">Add New Habit</DialogTitle>
+              <DialogTitle>Add Custom Quest</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Track a new quest that matters to you
+              </p>
             </DialogHeader>
-            <div className="space-y-3">
-              <Input
-                placeholder="Habit name (e.g., Drink Water)"
-                value={newHabit.title}
-                onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
-              />
-              <Input
-                placeholder="Description (optional)"
-                value={newHabit.description}
-                onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })}
-              />
-              <div className="flex gap-2">
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Quest Name</Label>
                 <Input
-                  type="number"
-                  placeholder="Target"
-                  value={newHabit.target_value}
-                  onChange={(e) => setNewHabit({ ...newHabit, target_value: parseInt(e.target.value) || 1 })}
-                  className="w-20"
-                />
-                <Input
-                  placeholder="Unit (L, min, etc.)"
-                  value={newHabit.unit}
-                  onChange={(e) => setNewHabit({ ...newHabit, unit: e.target.value })}
+                  placeholder="e.g., Drink Water"
+                  value={newHabit.title}
+                  onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
                 />
               </div>
+              <div className="space-y-2">
+                <Label className="text-muted-foreground">Target/Duration</Label>
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    placeholder="Target"
+                    value={newHabit.target_value}
+                    onChange={(e) => setNewHabit({ ...newHabit, target_value: parseInt(e.target.value) || 1 })}
+                    className="w-24"
+                  />
+                  <Input
+                    placeholder="Unit (L, min, etc.)"
+                    value={newHabit.unit}
+                    onChange={(e) => setNewHabit({ ...newHabit, unit: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Emoji:</span>
+                <span className="text-xl">
+                  {newHabit.title ? getAutoEmoji(newHabit.title) : '⭐'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  (auto-selected based on name)
+                </span>
+              </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowAddDialog(false)}>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddDialog(false)}>
                 Cancel
               </Button>
-              <Button size="sm" onClick={handleAddHabit}>
-                Add Habit
+              <Button onClick={handleAddHabit} className="bg-saffron hover:bg-saffron/80 text-white">
+                Add Quest
               </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Edit Habit Dialog */}
+        {/* Edit Quest Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-[320px] p-4">
+          <DialogContent className="max-w-[320px]">
             <DialogHeader>
-              <DialogTitle className="text-lg">Edit Habit</DialogTitle>
+              <DialogTitle>Edit Quest</DialogTitle>
+              <p className="text-sm text-muted-foreground">
+                Update the quest information as needed
+              </p>
             </DialogHeader>
             {editingHabit && (
-              <div className="space-y-3">
-                <Input
-                  placeholder="Habit name"
-                  value={editingHabit.title}
-                  onChange={(e) => setEditingHabit({ ...editingHabit, title: e.target.value })}
-                />
-                <Input
-                  placeholder="Description"
-                  value={editingHabit.description}
-                  onChange={(e) => setEditingHabit({ ...editingHabit, description: e.target.value })}
-                />
-                <div className="flex gap-2">
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Quest Name</Label>
                   <Input
-                    type="number"
-                    placeholder="Target"
-                    value={editingHabit.target_value}
-                    onChange={(e) => setEditingHabit({ ...editingHabit, target_value: parseInt(e.target.value) || 1 })}
-                    className="w-20"
+                    placeholder="Quest name"
+                    value={editingHabit.title}
+                    onChange={(e) => setEditingHabit({ ...editingHabit, title: e.target.value })}
                   />
-                  <Input
-                    placeholder="Unit"
-                    value={editingHabit.unit}
-                    onChange={(e) => setEditingHabit({ ...editingHabit, unit: e.target.value })}
-                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Target/Duration</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      type="number"
+                      placeholder="Target"
+                      value={editingHabit.target_value}
+                      onChange={(e) => setEditingHabit({ ...editingHabit, target_value: parseInt(e.target.value) || 1 })}
+                      className="w-24"
+                    />
+                    <Input
+                      placeholder="Unit"
+                      value={editingHabit.unit}
+                      onChange={(e) => setEditingHabit({ ...editingHabit, unit: e.target.value })}
+                    />
+                  </div>
                 </div>
               </div>
             )}
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowEditDialog(false)}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={handleEditHabit}>
-                Save
-              </Button>
+            <DialogFooter className="flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setShowEditDialog(false);
+                  setShowDeleteDialog(true);
+                }}
+                className="text-destructive hover:text-destructive/80"
+                title="Delete"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleEditHabit} className="bg-saffron hover:bg-saffron/80 text-white">
+                  Save
+                </Button>
+              </div>
             </DialogFooter>
           </DialogContent>
         </Dialog>
