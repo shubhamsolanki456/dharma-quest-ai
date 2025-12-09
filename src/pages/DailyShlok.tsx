@@ -69,7 +69,7 @@ const DailyShlok = () => {
 
   return (
     <MobileLayout currentPage="/daily-shlok">
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-8">
         {/* Header */}
         <div className="text-center py-4">
           <div className="bg-gradient-saffron p-3 rounded-full w-fit mx-auto mb-4">

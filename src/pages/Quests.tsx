@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useHaptics } from "@/hooks/useHaptics";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +61,7 @@ const getISTDate = () => {
 const Quests = () => {
   const { user, loading } = useAuth();
   const { profile, addDharmaPoints } = useProfile();
+  const { triggerHaptic } = useHaptics();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -300,6 +302,8 @@ const Quests = () => {
     const isCompleted = completedHabits.includes(habit.id);
     const todayIST = getISTDate();
     
+    triggerHaptic(isCompleted ? 'light' : 'success');
+    
     try {
       if (isCompleted) {
         // Uncomplete habit
@@ -311,7 +315,7 @@ const Quests = () => {
           .eq('completed_at', todayIST);
         
         setCompletedHabits(prev => prev.filter(id => id !== habit.id));
-        toast({ title: 'Habit unmarked' });
+        toast({ title: 'Quest unmarked' });
       } else {
         // Complete habit
         await supabase
@@ -335,7 +339,8 @@ const Quests = () => {
       }
     } catch (error) {
       console.error('Error toggling habit:', error);
-      toast({ title: 'Error updating habit', variant: 'destructive' });
+      triggerHaptic('error');
+      toast({ title: 'Error updating quest', variant: 'destructive' });
     }
   };
 
@@ -363,9 +368,9 @@ const Quests = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-display text-foreground">Daily Habits</h2>
+              <h2 className="text-2xl font-display text-foreground">Daily Quests</h2>
               <p className="text-muted-foreground text-sm">
-                Track your daily habits
+                Complete quests to earn Dharma Points
               </p>
             </div>
             <div className="flex items-center gap-2">
