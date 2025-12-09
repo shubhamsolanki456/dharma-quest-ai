@@ -365,8 +365,8 @@ const Quests = () => {
               Complete quests to earn Dharma Points
             </p>
           </div>
-          <div className="bg-muted rounded-full px-3 py-1.5">
-            <span className="text-sm font-medium text-foreground">
+          <div className="bg-gradient-saffron rounded-full px-3 py-1.5">
+            <span className="text-sm font-medium text-white">
               {completedCount}/{totalHabits} completed
             </span>
           </div>
