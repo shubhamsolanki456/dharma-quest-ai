@@ -43,7 +43,7 @@ export const useProfile = () => {
     }
 
     try {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', user.id)
@@ -51,7 +51,33 @@ export const useProfile = () => {
 
       if (error) {
         console.error('Error fetching profile:', error);
-      } else if (data) {
+      }
+      
+      // If no profile exists, create one
+      if (!data) {
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || null,
+            dharma_points: 0,
+            current_level: 1,
+            app_streak: 1,
+            sin_free_streak: 1,
+            last_activity_date: new Date().toISOString().split('T')[0]
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Error creating profile:', createError);
+        } else {
+          data = newProfile;
+        }
+      }
+      
+      if (data) {
         const profileData = data as UserProfile;
         cachedProfile = profileData;
         cacheUserId = user.id;

@@ -32,21 +32,41 @@ interface SettingItemProps {
   danger?: boolean;
 }
 
-const SettingItem = ({ icon: Icon, label, description, onClick, rightElement, danger }: SettingItemProps) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all hover:bg-muted/50 ${danger ? 'text-destructive' : ''}`}
-  >
-    <div className={`p-2 rounded-lg ${danger ? 'bg-destructive/10' : 'bg-saffron/10'}`}>
-      <Icon className={`h-5 w-5 ${danger ? 'text-destructive' : 'text-saffron'}`} />
-    </div>
-    <div className="flex-1 text-left">
-      <p className={`font-medium ${danger ? 'text-destructive' : 'text-foreground'}`}>{label}</p>
-      {description && <p className="text-xs text-muted-foreground">{description}</p>}
-    </div>
-    {rightElement || <ChevronRight className="h-5 w-5 text-muted-foreground" />}
-  </button>
-);
+const SettingItem = ({ icon: Icon, label, description, onClick, rightElement, danger }: SettingItemProps) => {
+  // If rightElement is provided (like Switch), render as div to avoid button nesting
+  if (rightElement) {
+    return (
+      <div
+        className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all hover:bg-muted/50 ${danger ? 'text-destructive' : ''}`}
+      >
+        <div className={`p-2 rounded-lg ${danger ? 'bg-destructive/10' : 'bg-saffron/10'}`}>
+          <Icon className={`h-5 w-5 ${danger ? 'text-destructive' : 'text-saffron'}`} />
+        </div>
+        <div className="flex-1 text-left">
+          <p className={`font-medium ${danger ? 'text-destructive' : 'text-foreground'}`}>{label}</p>
+          {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        {rightElement}
+      </div>
+    );
+  }
+  
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all hover:bg-muted/50 ${danger ? 'text-destructive' : ''}`}
+    >
+      <div className={`p-2 rounded-lg ${danger ? 'bg-destructive/10' : 'bg-saffron/10'}`}>
+        <Icon className={`h-5 w-5 ${danger ? 'text-destructive' : 'text-saffron'}`} />
+      </div>
+      <div className="flex-1 text-left">
+        <p className={`font-medium ${danger ? 'text-destructive' : 'text-foreground'}`}>{label}</p>
+        {description && <p className="text-xs text-muted-foreground">{description}</p>}
+      </div>
+      <ChevronRight className="h-5 w-5 text-muted-foreground" />
+    </button>
+  );
+};
 
 const Settings = () => {
   const navigate = useNavigate();
