@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useProfile } from '@/hooks/useProfile';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 
 interface FloatingDP {
   id: string;
@@ -34,6 +35,7 @@ interface TopBarProps {
 export const TopBarProvider = ({ children }: TopBarProps) => {
   const navigate = useNavigate();
   const { profile, loading } = useProfile();
+  const { playDPCollect, playLevelUp } = useSoundEffects();
   const [floatingDPs, setFloatingDPs] = useState<FloatingDP[]>([]);
   const [displayedDP, setDisplayedDP] = useState(0);
   const [showLevelUp, setShowLevelUp] = useState(false);
@@ -58,22 +60,24 @@ export const TopBarProvider = ({ children }: TopBarProps) => {
       if (previousLevelRef.current !== null && level > previousLevelRef.current) {
         setNewLevel(level);
         setShowLevelUp(true);
+        playLevelUp(); // Play level up sound
         setTimeout(() => setShowLevelUp(false), 3000);
       }
       previousLevelRef.current = level;
     }
-  }, [level, loading]);
+  }, [level, loading, playLevelUp]);
 
   const triggerFloatingDP = useCallback((points: number, sourceX: number, sourceY: number) => {
     const id = `dp-${Date.now()}-${Math.random()}`;
     setFloatingDPs(prev => [...prev, { id, points, x: sourceX, y: sourceY }]);
+    playDPCollect(); // Play DP collection sound
     
     // Remove after animation and increment displayed DP
     setTimeout(() => {
       setFloatingDPs(prev => prev.filter(dp => dp.id !== id));
       setDisplayedDP(prev => prev + points);
     }, 1000);
-  }, []);
+  }, [playDPCollect]);
 
   return (
     <DPContext.Provider value={{ triggerFloatingDP, displayedDP }}>
