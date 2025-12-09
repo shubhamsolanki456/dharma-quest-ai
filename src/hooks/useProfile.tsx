@@ -100,10 +100,58 @@ export const useProfile = () => {
     const newPoints = profile.dharma_points + points;
     const newLevel = Math.floor(newPoints / 100) + 1;
     
+    // Update local state immediately for optimistic UI
+    const updatedProfile = {
+      ...profile,
+      dharma_points: newPoints,
+      current_level: newLevel,
+      last_activity_date: new Date().toISOString().split('T')[0]
+    };
+    cachedProfile = updatedProfile;
+    setProfile(updatedProfile);
+    
     return updateProfile({
       dharma_points: newPoints,
       current_level: newLevel,
       last_activity_date: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const updateStreak = async () => {
+    if (!profile || !user) return { error: 'No profile found' };
+    
+    const today = new Date().toISOString().split('T')[0];
+    const lastActivity = profile.last_activity_date;
+    
+    if (lastActivity === today) {
+      return { data: profile, error: null };
+    }
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    
+    let newAppStreak = profile.app_streak;
+    let newSinFreeStreak = profile.sin_free_streak;
+    
+    if (lastActivity === yesterdayStr) {
+      // Consecutive day - increment streaks
+      newAppStreak = profile.app_streak + 1;
+      newSinFreeStreak = profile.sin_free_streak + 1;
+    } else if (!lastActivity) {
+      // First time user
+      newAppStreak = 1;
+      newSinFreeStreak = 1;
+    } else {
+      // Streak broken - reset to 1
+      newAppStreak = 1;
+      newSinFreeStreak = 1;
+    }
+    
+    return updateProfile({
+      app_streak: newAppStreak,
+      sin_free_streak: newSinFreeStreak,
+      last_activity_date: today
     });
   };
 
@@ -118,6 +166,7 @@ export const useProfile = () => {
     loading,
     updateProfile,
     addDharmaPoints,
+    updateStreak,
     refetch
   };
 };

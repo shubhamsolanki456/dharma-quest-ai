@@ -119,10 +119,6 @@ const Settings = () => {
     window.location.href = 'mailto:thedharmaai@gmail.com?subject=Help%20Request%20-%20Dharma%20AI';
   };
 
-  const handleCommunity = () => {
-    window.open('https://www.instagram.com/dharma_.ai/', '_blank');
-  };
-
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -251,9 +247,9 @@ const Settings = () => {
           
           <SettingItem
             icon={Instagram}
-            label="Community"
-            description="Join us on Instagram"
-            onClick={handleCommunity}
+            label="Instagram"
+            description="@dharma_.ai"
+            onClick={() => window.open('https://www.instagram.com/dharma_.ai/', '_blank')}
           />
           
           <SettingItem
@@ -262,6 +258,26 @@ const Settings = () => {
             description="Spread the wisdom"
             onClick={handleShare}
           />
+        </Card>
+
+        {/* Join Community */}
+        <Card className="card-3d-subtle p-4 rounded-xl bg-gradient-to-r from-lotus/10 to-saffron/10">
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-lg bg-lotus/20">
+              <Instagram className="h-6 w-6 text-lotus" />
+            </div>
+            <div className="flex-1">
+              <p className="font-display text-foreground">Join Our Community</p>
+              <p className="text-xs text-muted-foreground">Connect with fellow seekers</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => window.open('https://www.instagram.com/dharma_.ai/', '_blank')}
+            >
+              Follow
+            </Button>
+          </div>
         </Card>
 
         {/* Sign Out */}

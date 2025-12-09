@@ -45,8 +45,8 @@ All colors MUST be HSL.
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 240 8% 12%;
-    --input: 240 8% 12%;
+    --border: 240 8% 15%;
+    --input: 240 8% 15%;
     --ring: 33 100% 50%;
 
     --radius: 1rem;
@@ -184,9 +184,8 @@ All colors MUST be HSL.
     box-shadow: 
       0 4px 6px -1px hsl(0 0% 0% / 0.3),
       0 10px 20px -5px hsl(0 0% 0% / 0.4),
-      0 25px 50px -12px hsl(0 0% 0% / 0.5),
-      inset 0 1px 0 hsl(0 0% 100% / 0.05);
-    border: 1px solid hsl(0 0% 100% / 0.05);
+      0 25px 50px -12px hsl(0 0% 0% / 0.5);
+    border: none;
     transform: perspective(1000px) rotateX(2deg);
     transform-style: preserve-3d;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -197,17 +196,15 @@ All colors MUST be HSL.
     box-shadow: 
       0 8px 12px -2px hsl(0 0% 0% / 0.35),
       0 16px 30px -8px hsl(0 0% 0% / 0.45),
-      0 32px 60px -16px hsl(0 0% 0% / 0.55),
-      inset 0 1px 0 hsl(0 0% 100% / 0.08);
+      0 32px 60px -16px hsl(0 0% 0% / 0.55);
   }
 
   .card-3d-subtle {
     background: linear-gradient(145deg, hsl(240 8% 9%) 0%, hsl(240 8% 6%) 100%);
     box-shadow: 
       0 2px 4px hsl(0 0% 0% / 0.2),
-      0 8px 16px -4px hsl(0 0% 0% / 0.3),
-      inset 0 1px 0 hsl(0 0% 100% / 0.03);
-    border: 1px solid hsl(0 0% 100% / 0.04);
+      0 8px 16px -4px hsl(0 0% 0% / 0.3);
+    border: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   
@@ -215,8 +212,7 @@ All colors MUST be HSL.
     transform: translateY(-1px);
     box-shadow: 
       0 4px 8px hsl(0 0% 0% / 0.25),
-      0 12px 24px -6px hsl(0 0% 0% / 0.35),
-      inset 0 1px 0 hsl(0 0% 100% / 0.05);
+      0 12px 24px -6px hsl(0 0% 0% / 0.35);
   }
 
   /* Spiritual shadows */

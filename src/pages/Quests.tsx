@@ -118,11 +118,12 @@ const Quests = () => {
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
   const [newQuest, setNewQuest] = useState({ title: '', description: '', reward: 25 });
   const [showWeekly, setShowWeekly] = useState(false);
+  const [currentDate, setCurrentDate] = useState(getISTDate());
 
-  // Get today's random quests
+  // Get today's random quests - refreshes at midnight IST
   const dailyQuests = useMemo(() => {
     return [...getTodaysQuests(), ...customQuests.filter(q => q.type === 'daily')];
-  }, [customQuests]);
+  }, [customQuests, currentDate]);
 
   // Quest ID to database number mapping
   const getQuestNumericId = (questId: string): number => {
@@ -146,6 +147,23 @@ const Quests = () => {
       loadCustomQuests();
     }
   }, [user]);
+
+  // Check for midnight refresh - reset quests at midnight IST
+  useEffect(() => {
+    const checkMidnight = () => {
+      const newDate = getISTDate();
+      if (newDate !== currentDate) {
+        setCurrentDate(newDate);
+        setCompletedQuests([]); // Reset completed quests for new day
+        setHasShownFirstMessage(false); // Reset motivation messages
+        if (user) fetchCompletedQuests();
+      }
+    };
+    
+    // Check every minute for date change
+    const interval = setInterval(checkMidnight, 60000);
+    return () => clearInterval(interval);
+  }, [currentDate, user]);
 
   const loadCustomQuests = () => {
     const saved = localStorage.getItem(`custom_quests_${user?.id}`);
@@ -610,11 +628,11 @@ const Quests = () => {
 
         {/* Add Quest Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-sm mx-4">
+          <DialogContent className="max-w-[320px] mx-auto p-4">
             <DialogHeader>
               <DialogTitle className="font-display">Add Custom Quest</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="space-y-3 py-2">
               <div>
                 <label className="text-sm font-medium text-foreground">Title</label>
                 <Input
@@ -654,12 +672,12 @@ const Quests = () => {
 
         {/* Edit Quest Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-sm mx-4">
+          <DialogContent className="max-w-[320px] mx-auto p-4">
             <DialogHeader>
-              <DialogTitle className="font-display">Edit Quest</DialogTitle>
+              <DialogTitle className="font-display text-base">Edit Quest</DialogTitle>
             </DialogHeader>
             {editingQuest && (
-              <div className="space-y-4 py-4">
+              <div className="space-y-3 py-2">
                 <div>
                   <label className="text-sm font-medium text-foreground">Title</label>
                   <Input
@@ -698,7 +716,7 @@ const Quests = () => {
 
         {/* Delete Confirmation */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent className="max-w-sm mx-4">
+          <AlertDialogContent className="max-w-[300px] mx-auto p-4">
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Quest?</AlertDialogTitle>
               <AlertDialogDescription>
