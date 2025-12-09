@@ -34,7 +34,7 @@ export const BottomNavigation = memo(({ currentPage }: BottomNavigationProps) =>
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : 100 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed bottom-0 left-0 right-0 max-w-[365px] mx-auto bg-card border-t border-border safe-bottom z-50"
+        className="fixed bottom-0 left-0 right-0 max-w-[360px] mx-auto bg-card border-t border-border safe-bottom z-50"
       >
         <div className="flex items-center justify-around px-1 py-2">
           {navItems.map(({ icon: Icon, label, path }) => {
