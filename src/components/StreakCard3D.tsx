@@ -1,5 +1,6 @@
 import { Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useHaptics } from '@/hooks/useHaptics';
 
 interface StreakCard3DProps {
   appStreak: number;
@@ -8,12 +9,23 @@ interface StreakCard3DProps {
 
 export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) => {
   const navigate = useNavigate();
-  const totalDedication = Math.min(Math.floor((appStreak + sinFreeStreak) / 4), 5);
+  const { triggerHaptic } = useHaptics();
+  
+  // Calculate dedication: 1 star per 7 days of combined streaks (max 5)
+  const totalDays = appStreak + sinFreeStreak;
+  const totalDedication = Math.min(Math.floor(totalDays / 7), 5);
+  // If no streaks yet, show at least indication of progress towards first star
+  const showProgress = totalDays > 0 && totalDedication === 0;
+  
+  const handleClick = () => {
+    triggerHaptic('medium');
+    navigate('/sin-log');
+  };
   
   return (
     <div 
-      className="rounded-2xl overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.5)] min-h-[180px] cursor-pointer"
-      onClick={() => navigate('/sin-log')}
+      className="rounded-2xl overflow-hidden relative shadow-[0_8px_30px_rgba(0,0,0,0.5)] min-h-[180px] cursor-pointer active:scale-[0.98] transition-transform"
+      onClick={handleClick}
     >
       {/* Background image with inline style for reliability */}
       <div 
@@ -55,13 +67,20 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
           {/* Dedication row with stars */}
           <div className="flex items-center gap-4">
             <span className="text-white/80 text-sm w-20 font-display">Dedication</span>
-            <div className="flex gap-0.5">
+            <div className="flex gap-0.5 items-center">
               {[1, 2, 3, 4, 5].map((star) => (
                 <Star 
                   key={star} 
-                  className={`h-4 w-4 ${star <= totalDedication ? 'text-yellow-400 fill-yellow-400' : 'text-white/40 fill-white/20'}`}
+                  className={`h-4 w-4 transition-all ${
+                    star <= totalDedication 
+                      ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.5)]' 
+                      : 'text-white/40 fill-white/10'
+                  }`}
                 />
               ))}
+              {showProgress && (
+                <span className="text-white/60 text-xs ml-2">({totalDays}/7 days)</span>
+              )}
             </div>
           </div>
         </div>
