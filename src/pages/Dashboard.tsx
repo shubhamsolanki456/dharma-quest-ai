@@ -64,7 +64,7 @@ const getRandomQuests = () => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { profile, addDharmaPoints } = useProfile();
+  const { profile, addDharmaPoints, updateStreak } = useProfile();
   const { permission, isSupported, requestPermission } = usePushNotifications();
   const dpContainerRef = useRef<HTMLDivElement>(null);
   
@@ -72,6 +72,7 @@ const Dashboard = () => {
   const [displayedDP, setDisplayedDP] = useState(0);
   const [completedQuestIds, setCompletedQuestIds] = useState<number[]>([]);
   const [isLoadingQuests, setIsLoadingQuests] = useState(true);
+  const [currentDate, setCurrentDate] = useState(getISTDate());
 
   const level = profile?.current_level || 1;
   const totalDP = profile?.dharma_points || 0;
@@ -83,7 +84,7 @@ const Dashboard = () => {
   // Get today's shlok for the wisdom card
   const todayShlok = getTodaysShloka(shlokas);
   
-  const todaysQuests = useMemo(() => getRandomQuests(), []);
+  const todaysQuests = useMemo(() => getRandomQuests(), [currentDate]);
   
   const quests = useMemo(() => 
     todaysQuests.map(q => ({ ...q, completed: completedQuestIds.includes(q.id) })),
@@ -117,12 +118,32 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchCompletedQuests();
-  }, [fetchCompletedQuests]);
+    // Update streak on page load
+    if (user) {
+      updateStreak();
+    }
+  }, [fetchCompletedQuests, user, updateStreak]);
 
   // Sync displayedDP with profile
   useEffect(() => {
     setDisplayedDP(totalDP);
   }, [totalDP]);
+
+  // Check for midnight refresh - reset quests at midnight IST
+  useEffect(() => {
+    const checkMidnight = () => {
+      const newDate = getISTDate();
+      if (newDate !== currentDate) {
+        setCurrentDate(newDate);
+        setCompletedQuestIds([]); // Reset completed quests for new day
+        fetchCompletedQuests();
+      }
+    };
+    
+    // Check every minute for date change
+    const interval = setInterval(checkMidnight, 60000);
+    return () => clearInterval(interval);
+  }, [currentDate, fetchCompletedQuests]);
 
   // Setup notifications on mount
   useEffect(() => {
