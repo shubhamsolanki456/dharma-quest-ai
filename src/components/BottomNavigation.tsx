@@ -1,4 +1,4 @@
-import { Home, MessageCircle, Target, User, BookOpen } from 'lucide-react';
+import { Home, Target, User, BookOpen, Heart } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { memo, useCallback } from 'react';
 
@@ -8,9 +8,9 @@ interface BottomNavigationProps {
 
 const navItems = [
   { icon: Home, label: 'Home', path: '/dashboard' },
-  { icon: MessageCircle, label: 'AI Guide', path: '/ai-guide' },
-  { icon: Target, label: 'Quests', path: '/quests' },
   { icon: BookOpen, label: 'Shlok', path: '/daily-shlok' },
+  { icon: Target, label: 'Habits', path: '/quests' },
+  { icon: Heart, label: 'Sin Log', path: '/sin-log' },
   { icon: User, label: 'Profile', path: '/profile' },
 ];
 

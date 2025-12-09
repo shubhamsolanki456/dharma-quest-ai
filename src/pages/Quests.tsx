@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,12 +6,11 @@ import { useProfile } from "@/hooks/useProfile";
 import { MobileLayout } from "@/components/MobileLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { 
-  Plus, Check, AlertCircle, Info, Flame, Star, Trophy, 
-  Pencil, Trash2, X, ChevronDown, ChevronUp 
+  Plus, Check, Flame, Star, 
+  Pencil, Trash2, X, Droplets, Dumbbell, BookOpen, Moon, Apple
 } from "lucide-react";
 import {
   Dialog,
@@ -31,73 +30,32 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-interface Quest {
+interface Habit {
   id: string;
   title: string;
   description: string;
-  reward: number;
-  type: 'daily' | 'weekly';
   icon: string;
-  isCustom?: boolean;
+  target_value: number;
+  unit: string;
+  is_default?: boolean;
 }
 
-// Default daily quests for self-reflection - changes daily at 12 AM IST
-const allDefaultQuests: Quest[] = [
-  { id: 'meditation', title: 'Morning Meditation', description: 'Spend 10 minutes in silent meditation to center yourself', reward: 30, type: 'daily', icon: '🧘‍♂️' },
-  { id: 'scripture', title: 'Scripture Study', description: 'Read and reflect on one shloka from Bhagavad Gita', reward: 25, type: 'daily', icon: '📖' },
-  { id: 'kindness', title: 'Act of Kindness', description: 'Perform one selfless act of service today', reward: 35, type: 'daily', icon: '💝' },
-  { id: 'gratitude', title: 'Gratitude Practice', description: 'Write down 3 things you are deeply grateful for', reward: 20, type: 'daily', icon: '🙏' },
-  { id: 'prayer', title: 'Evening Prayer', description: 'Offer prayers and thanks before sleeping', reward: 25, type: 'daily', icon: '🙏' },
-  { id: 'forgiveness', title: 'Forgiveness Practice', description: 'Forgive someone who wronged you, even silently', reward: 35, type: 'daily', icon: '💜' },
-  { id: 'mindful', title: 'Mindful Breathing', description: 'Practice 5 minutes of conscious pranayama', reward: 15, type: 'daily', icon: '🌬️' },
-  { id: 'detox', title: 'Digital Detox Hour', description: 'Spend 1 hour away from screens in contemplation', reward: 30, type: 'daily', icon: '📵' },
-  { id: 'review', title: 'Evening Self-Review', description: 'Review your day and identify moments of ego or attachment', reward: 25, type: 'daily', icon: '🌙' },
-  { id: 'truth', title: 'Speak Only Truth', description: 'Be mindful of speaking only satya throughout the day', reward: 40, type: 'daily', icon: '✨' },
-  { id: 'serve', title: 'Serve Someone', description: 'Help a family member or stranger without being asked', reward: 35, type: 'daily', icon: '🤝' },
-  { id: 'journal', title: 'Self-Reflection Journal', description: 'Reflect on one action that aligned with your dharma', reward: 30, type: 'daily', icon: '📝' },
-];
-
-const weeklyQuests: Quest[] = [
-  { id: 'temple', title: 'Temple Visit', description: 'Visit a temple or sacred place for worship', reward: 100, type: 'weekly', icon: '🏛️' },
-  { id: 'charity', title: 'Charitable Giving', description: 'Donate to a worthy cause or help someone in need', reward: 150, type: 'weekly', icon: '💰' }
+// Default habits
+const defaultHabits: Habit[] = [
+  { id: 'water', title: 'Drink Water', description: 'Stay hydrated throughout the day', icon: '💧', target_value: 4, unit: 'L', is_default: true },
+  { id: 'exercise', title: 'Exercise', description: 'Physical activity for a healthy body', icon: '🏋️', target_value: 30, unit: 'min', is_default: true },
+  { id: 'reading', title: 'Read Scripture', description: 'Read spiritual texts daily', icon: '📖', target_value: 15, unit: 'min', is_default: true },
+  { id: 'sleep', title: 'Sleep Early', description: 'Go to bed before 10:30 PM', icon: '🌙', target_value: 1, unit: '', is_default: true },
+  { id: 'fruits', title: 'Eat Fruits', description: 'Consume healthy fruits daily', icon: '🍎', target_value: 2, unit: 'servings', is_default: true },
 ];
 
 // Get today's date in IST
 const getISTDate = () => {
   const now = new Date();
-  // Convert to IST (UTC+5:30)
   const istOffset = 5.5 * 60 * 60 * 1000;
   const istTime = new Date(now.getTime() + istOffset);
   return istTime.toISOString().split('T')[0];
 };
-
-// Get 3 random quests seeded by IST date
-const getTodaysQuests = (): Quest[] => {
-  const todayIST = getISTDate();
-  let seed = 0;
-  for (let i = 0; i < todayIST.length; i++) {
-    seed += todayIST.charCodeAt(i);
-  }
-  
-  const shuffled = [...allDefaultQuests].sort(() => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280 - 0.5;
-  });
-  
-  return shuffled.slice(0, 3);
-};
-
-const motivationMessages = [
-  "First quest done! Your spiritual journey is beginning! 🌟",
-  "Keep going! Every step brings you closer to enlightenment! 🙏",
-  "Halfway there! The Divine is pleased with your dedication! ✨"
-];
-
-const completionMessages = [
-  "All daily quests complete! You are truly walking the path of dharma! 🕉️",
-  "Outstanding! Your spiritual discipline is inspiring! 🌸",
-  "Perfect day! May Lord Krishna bless your continued journey! 🙏"
-];
 
 const Quests = () => {
   const { user, loading } = useAuth();
@@ -105,35 +63,15 @@ const Quests = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [completedQuests, setCompletedQuests] = useState<string[]>([]);
-  const [showMotivationCard, setShowMotivationCard] = useState(false);
-  const [motivationMessage, setMotivationMessage] = useState("");
-  const [showCompletionCard, setShowCompletionCard] = useState(false);
-  const [hasShownFirstMessage, setHasShownFirstMessage] = useState(false);
-  const [loadingQuestId, setLoadingQuestId] = useState<string | null>(null);
-  const [customQuests, setCustomQuests] = useState<Quest[]>([]);
+  const [habits, setHabits] = useState<Habit[]>([]);
+  const [completedHabits, setCompletedHabits] = useState<string[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
-  const [newQuest, setNewQuest] = useState({ title: '', description: '', reward: 25 });
-  const [showWeekly, setShowWeekly] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [newHabit, setNewHabit] = useState({ title: '', description: '', target_value: 1, unit: '' });
   const [currentDate, setCurrentDate] = useState(getISTDate());
-
-  // Get today's random quests - refreshes at midnight IST
-  const dailyQuests = useMemo(() => {
-    return [...getTodaysQuests(), ...customQuests.filter(q => q.type === 'daily')];
-  }, [customQuests, currentDate]);
-
-  // Quest ID to database number mapping
-  const getQuestNumericId = (questId: string): number => {
-    const mapping: Record<string, number> = {
-      'meditation': 1, 'scripture': 2, 'kindness': 3, 'gratitude': 4, 'prayer': 5,
-      'forgiveness': 6, 'mindful': 7, 'detox': 8, 'review': 9, 'truth': 10,
-      'serve': 11, 'journal': 12, 'temple': 101, 'charity': 102
-    };
-    return mapping[questId] || parseInt(questId.replace('custom-', '')) + 1000;
-  };
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -141,215 +79,271 @@ const Quests = () => {
     }
   }, [user, loading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchCompletedQuests();
-      loadCustomQuests();
+  // Load habits from database or use defaults
+  const loadHabits = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('habits')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true);
+      
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setHabits(data.map(h => ({
+          id: h.id,
+          title: h.title,
+          description: h.description || '',
+          icon: h.icon || '⭐',
+          target_value: h.target_value || 1,
+          unit: h.unit || ''
+        })));
+      } else {
+        // Initialize with default habits
+        const habitsToInsert = defaultHabits.map(h => ({
+          user_id: user.id,
+          title: h.title,
+          description: h.description,
+          icon: h.icon,
+          target_value: h.target_value,
+          unit: h.unit,
+          is_active: true
+        }));
+        
+        const { data: inserted, error: insertError } = await supabase
+          .from('habits')
+          .insert(habitsToInsert)
+          .select();
+        
+        if (insertError) throw insertError;
+        
+        if (inserted) {
+          setHabits(inserted.map(h => ({
+            id: h.id,
+            title: h.title,
+            description: h.description || '',
+            icon: h.icon || '⭐',
+            target_value: h.target_value || 1,
+            unit: h.unit || ''
+          })));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading habits:', error);
+      // Fallback to default habits without saving
+      setHabits(defaultHabits);
+    } finally {
+      setIsLoading(false);
     }
   }, [user]);
 
-  // Check for midnight refresh - reset quests at midnight IST
+  // Load completed habits for today
+  const loadCompletedHabits = useCallback(async () => {
+    if (!user) return;
+    
+    try {
+      const todayIST = getISTDate();
+      const { data, error } = await supabase
+        .from('habit_completions')
+        .select('habit_id')
+        .eq('user_id', user.id)
+        .eq('completed_at', todayIST);
+      
+      if (error) throw error;
+      
+      if (data) {
+        setCompletedHabits(data.map(d => d.habit_id));
+      }
+    } catch (error) {
+      console.error('Error loading completed habits:', error);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadHabits();
+      loadCompletedHabits();
+    }
+  }, [user, loadHabits, loadCompletedHabits]);
+
+  // Check for midnight refresh
   useEffect(() => {
     const checkMidnight = () => {
       const newDate = getISTDate();
       if (newDate !== currentDate) {
         setCurrentDate(newDate);
-        setCompletedQuests([]); // Reset completed quests for new day
-        setHasShownFirstMessage(false); // Reset motivation messages
-        if (user) fetchCompletedQuests();
+        setCompletedHabits([]);
+        loadCompletedHabits();
       }
     };
     
-    // Check every minute for date change
     const interval = setInterval(checkMidnight, 60000);
     return () => clearInterval(interval);
-  }, [currentDate, user]);
+  }, [currentDate, loadCompletedHabits]);
 
-  const loadCustomQuests = () => {
-    const saved = localStorage.getItem(`custom_quests_${user?.id}`);
-    if (saved) {
-      setCustomQuests(JSON.parse(saved));
-    }
-  };
-
-  const saveCustomQuests = (quests: Quest[]) => {
-    localStorage.setItem(`custom_quests_${user?.id}`, JSON.stringify(quests));
-    setCustomQuests(quests);
-  };
-
-  const fetchCompletedQuests = async () => {
-    if (!user) return;
-    
-    const todayIST = getISTDate();
-    const { data } = await supabase
-      .from('quest_completions')
-      .select('quest_id, quest_title')
-      .eq('user_id', user.id)
-      .gte('completed_at', todayIST);
-    
-    if (data) {
-      // Get completed quest IDs
-      const completedIds = data.map(d => {
-        // Try to find by numeric ID first
-        const numId = d.quest_id;
-        for (const quest of [...allDefaultQuests, ...weeklyQuests]) {
-          if (getQuestNumericId(quest.id) === numId) return quest.id;
-        }
-        // Check custom quests
-        if (numId >= 1000) return `custom-${numId - 1000}`;
-        return d.quest_title; // fallback to title
-      }).filter(Boolean);
-      setCompletedQuests(completedIds);
-    }
-  };
-
-  // Auto emoji picker based on quest title keywords
   const getAutoEmoji = (title: string): string => {
     const lower = title.toLowerCase();
-    if (lower.includes('meditat')) return '🧘';
-    if (lower.includes('pray') || lower.includes('prayer')) return '🙏';
-    if (lower.includes('read') || lower.includes('study') || lower.includes('scripture')) return '📖';
-    if (lower.includes('gratitude') || lower.includes('grateful') || lower.includes('thank')) return '💛';
-    if (lower.includes('kind') || lower.includes('help') || lower.includes('serve')) return '💝';
-    if (lower.includes('forgive')) return '💜';
-    if (lower.includes('breath') || lower.includes('pranayama')) return '🌬️';
-    if (lower.includes('detox') || lower.includes('digital')) return '📵';
-    if (lower.includes('journal') || lower.includes('write') || lower.includes('reflect')) return '📝';
-    if (lower.includes('temple') || lower.includes('worship')) return '🏛️';
-    if (lower.includes('mantra') || lower.includes('chant')) return '🕉️';
-    if (lower.includes('yoga')) return '🧘‍♂️';
-    if (lower.includes('fast') || lower.includes('vrat')) return '🍃';
-    if (lower.includes('morning') || lower.includes('sunrise')) return '🌅';
-    if (lower.includes('evening') || lower.includes('night') || lower.includes('sleep')) return '🌙';
     if (lower.includes('water') || lower.includes('drink')) return '💧';
-    if (lower.includes('walk') || lower.includes('exercise')) return '🚶';
-    if (lower.includes('family')) return '👨‍👩‍👧';
-    if (lower.includes('love') || lower.includes('heart')) return '❤️';
-    if (lower.includes('peace') || lower.includes('calm')) return '☮️';
-    if (lower.includes('truth') || lower.includes('honest')) return '✨';
+    if (lower.includes('exercise') || lower.includes('gym') || lower.includes('workout')) return '🏋️';
+    if (lower.includes('read') || lower.includes('book') || lower.includes('scripture')) return '📖';
+    if (lower.includes('sleep') || lower.includes('bed')) return '🌙';
+    if (lower.includes('fruit') || lower.includes('vegetable') || lower.includes('eat')) return '🍎';
+    if (lower.includes('meditat')) return '🧘';
+    if (lower.includes('pray')) return '🙏';
+    if (lower.includes('walk') || lower.includes('run')) return '🚶';
+    if (lower.includes('yoga')) return '🧘‍♂️';
+    if (lower.includes('journal') || lower.includes('write')) return '📝';
     return '⭐';
   };
 
-  const handleAddQuest = () => {
-    if (!newQuest.title.trim()) {
-      toast({ title: 'Please enter a quest title', variant: 'destructive' });
+  const handleAddHabit = async () => {
+    if (!newHabit.title.trim() || !user) {
+      toast({ title: 'Please enter a habit title', variant: 'destructive' });
       return;
     }
 
-    const autoEmoji = getAutoEmoji(newQuest.title);
-
-    const quest: Quest = {
-      id: `custom-${Date.now()}`,
-      title: newQuest.title,
-      description: newQuest.description || 'Complete this spiritual practice',
-      reward: newQuest.reward,
-      type: 'daily',
-      icon: autoEmoji,
-      isCustom: true
-    };
-
-    saveCustomQuests([...customQuests, quest]);
-    setNewQuest({ title: '', description: '', reward: 25 });
-    setShowAddDialog(false);
-    toast({ title: 'Quest added successfully! 🙏' });
-  };
-
-  const handleEditQuest = () => {
-    if (!editingQuest) return;
-
-    const updated = customQuests.map(q => 
-      q.id === editingQuest.id ? { ...editingQuest } : q
-    );
-    saveCustomQuests(updated);
-    setShowEditDialog(false);
-    setEditingQuest(null);
-    toast({ title: 'Quest updated! 🙏' });
-  };
-
-  const handleDeleteQuest = () => {
-    if (!editingQuest) return;
-
-    const filtered = customQuests.filter(q => q.id !== editingQuest.id);
-    saveCustomQuests(filtered);
-    setShowDeleteDialog(false);
-    setEditingQuest(null);
-    toast({ title: 'Quest deleted' });
-  };
-
-  const handleToggleQuest = async (quest: Quest) => {
-    if (!user) return;
-    
-    const isCompleted = completedQuests.includes(quest.id);
-    setLoadingQuestId(quest.id);
-
-    const numericQuestId = getQuestNumericId(quest.id);
-    
     try {
-      if (isCompleted) {
-        // Uncomplete quest
-        await supabase
-          .from('quest_completions')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('quest_id', numericQuestId);
-        
-        setCompletedQuests(prev => prev.filter(id => id !== quest.id));
-      } else {
-        // Complete quest
-        await supabase
-          .from('quest_completions')
-          .insert({
-            user_id: user.id,
-            quest_id: numericQuestId,
-            quest_title: quest.title,
-            points_earned: quest.reward
-          });
-        
-        await addDharmaPoints(quest.reward);
-        
-        const newCompleted = [...completedQuests, quest.id];
-        setCompletedQuests(newCompleted);
+      const { data, error } = await supabase
+        .from('habits')
+        .insert({
+          user_id: user.id,
+          title: newHabit.title,
+          description: newHabit.description || 'Complete this habit daily',
+          icon: getAutoEmoji(newHabit.title),
+          target_value: newHabit.target_value || 1,
+          unit: newHabit.unit || '',
+          is_active: true
+        })
+        .select()
+        .single();
 
-        // Show motivation messages
-        const dailyCompleted = newCompleted.filter(id => 
-          dailyQuests.some(q => q.id === id)
-        ).length;
+      if (error) throw error;
 
-        if (dailyCompleted === 1 && !hasShownFirstMessage) {
-          setMotivationMessage(motivationMessages[0]);
-          setShowMotivationCard(true);
-          setHasShownFirstMessage(true);
-        } else if (dailyCompleted === Math.ceil(dailyQuests.length / 2)) {
-          setMotivationMessage(motivationMessages[2]);
-          setShowMotivationCard(true);
-        } else if (dailyCompleted === dailyQuests.length) {
-          setShowCompletionCard(true);
-        } else {
-          toast({ 
-            title: `+${quest.reward} Dharma Points earned! 🙏`,
-            description: quest.title + " completed!"
-          });
-        }
+      if (data) {
+        setHabits(prev => [...prev, {
+          id: data.id,
+          title: data.title,
+          description: data.description || '',
+          icon: data.icon || '⭐',
+          target_value: data.target_value || 1,
+          unit: data.unit || ''
+        }]);
       }
+
+      setNewHabit({ title: '', description: '', target_value: 1, unit: '' });
+      setShowAddDialog(false);
+      toast({ title: 'Habit added successfully! 🙏' });
     } catch (error) {
-      toast({ title: 'Error updating quest', variant: 'destructive' });
-    } finally {
-      setLoadingQuestId(null);
+      console.error('Error adding habit:', error);
+      toast({ title: 'Failed to add habit', variant: 'destructive' });
     }
   };
 
-  const dailyCompleted = completedQuests.filter(id => 
-    dailyQuests.some(q => q.id === id)
-  ).length;
+  const handleEditHabit = async () => {
+    if (!editingHabit || !user) return;
 
-  const totalDailyPoints = completedQuests
-    .filter(id => dailyQuests.some(q => q.id === id))
-    .reduce((acc, id) => {
-      const quest = dailyQuests.find(q => q.id === id);
-      return acc + (quest?.reward || 0);
-    }, 0);
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .update({
+          title: editingHabit.title,
+          description: editingHabit.description,
+          icon: getAutoEmoji(editingHabit.title),
+          target_value: editingHabit.target_value,
+          unit: editingHabit.unit
+        })
+        .eq('id', editingHabit.id)
+        .eq('user_id', user.id);
 
-  if (loading || !user) {
+      if (error) throw error;
+
+      setHabits(prev => prev.map(h => 
+        h.id === editingHabit.id ? { ...editingHabit, icon: getAutoEmoji(editingHabit.title) } : h
+      ));
+      setShowEditDialog(false);
+      setEditingHabit(null);
+      toast({ title: 'Habit updated! 🙏' });
+    } catch (error) {
+      console.error('Error updating habit:', error);
+      toast({ title: 'Failed to update habit', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteHabit = async () => {
+    if (!editingHabit || !user) return;
+
+    try {
+      const { error } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', editingHabit.id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setHabits(prev => prev.filter(h => h.id !== editingHabit.id));
+      setShowDeleteDialog(false);
+      setEditingHabit(null);
+      toast({ title: 'Habit deleted' });
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      toast({ title: 'Failed to delete habit', variant: 'destructive' });
+    }
+  };
+
+  const handleToggleHabit = async (habit: Habit) => {
+    if (!user) return;
+    
+    const isCompleted = completedHabits.includes(habit.id);
+    const todayIST = getISTDate();
+    
+    try {
+      if (isCompleted) {
+        // Uncomplete habit
+        await supabase
+          .from('habit_completions')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('habit_id', habit.id)
+          .eq('completed_at', todayIST);
+        
+        setCompletedHabits(prev => prev.filter(id => id !== habit.id));
+        toast({ title: 'Habit unmarked' });
+      } else {
+        // Complete habit
+        await supabase
+          .from('habit_completions')
+          .insert({
+            user_id: user.id,
+            habit_id: habit.id,
+            completed_at: todayIST,
+            value: habit.target_value
+          });
+        
+        setCompletedHabits(prev => [...prev, habit.id]);
+        
+        // Award 10 DP per habit completion
+        await addDharmaPoints(10);
+        
+        toast({ 
+          title: `+10 Dharma Points earned! 🙏`,
+          description: `${habit.title} completed!`
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling habit:', error);
+      toast({ title: 'Error updating habit', variant: 'destructive' });
+    }
+  };
+
+  const completedCount = completedHabits.length;
+  const totalHabits = habits.length;
+  const progress = totalHabits > 0 ? (completedCount / totalHabits) * 100 : 0;
+
+  if (loading || !user || isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -360,39 +354,6 @@ const Quests = () => {
   return (
     <MobileLayout currentPage="/quests">
       <div className="space-y-6 pb-32 p-4">
-        {/* Motivation Card */}
-        <AnimatePresence>
-          {showMotivationCard && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="relative p-[2px] rounded-2xl bg-gradient-to-r from-saffron via-lotus-pink to-dharma-gold"
-            >
-              <div className="bg-card rounded-2xl p-4">
-                <div className="flex items-start">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-foreground flex items-center">
-                      <AlertCircle className="h-5 w-5 mr-2 text-saffron" />
-                      Keep going!
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {motivationMessage}
-                    </p>
-                  </div>
-                  <Button
-                    size="sm"
-                    className="ml-4 bg-gradient-saffron text-primary-foreground"
-                    onClick={() => setShowMotivationCard(false)}
-                  >
-                    Got it
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Main Content */}
         <motion.div
           className="card-3d rounded-2xl p-6"
@@ -402,9 +363,9 @@ const Quests = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <div>
-              <h2 className="text-2xl font-display text-foreground">Daily Quests</h2>
+              <h2 className="text-2xl font-display text-foreground">Daily Habits</h2>
               <p className="text-muted-foreground text-sm">
-                Refreshes daily at 12 AM IST
+                Track your daily habits
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -419,7 +380,7 @@ const Quests = () => {
               </Button>
               <div className="bg-muted rounded-full px-3 py-1.5">
                 <span className="text-sm font-medium text-foreground">
-                  {dailyCompleted}/{dailyQuests.length}
+                  {completedCount}/{totalHabits}
                 </span>
               </div>
             </div>
@@ -429,102 +390,83 @@ const Quests = () => {
           <div className="flex items-center gap-4 mb-6 text-sm">
             <div className="flex items-center gap-1.5 bg-saffron/10 px-3 py-1.5 rounded-full">
               <Star className="h-4 w-4 text-saffron" />
-              <span className="text-saffron font-medium">{totalDailyPoints} DP earned</span>
+              <span className="text-saffron font-medium">{completedCount * 10} DP today</span>
             </div>
             <div className="flex items-center gap-1.5 bg-lotus-pink/10 px-3 py-1.5 rounded-full">
               <Flame className="h-4 w-4 text-lotus-pink" />
-              <span className="text-lotus-pink font-medium">{profile?.app_streak || 1} day streak</span>
+              <span className="text-lotus-pink font-medium">{Math.round(progress)}% done</span>
             </div>
           </div>
 
-          {/* Quest List */}
-          <div className="space-y-4">
-            {dailyQuests.map((quest, index) => {
-              const isCompleted = completedQuests.includes(quest.id);
-              const isLoading = loadingQuestId === quest.id;
+          {/* Progress Bar */}
+          <div className="w-full bg-muted rounded-full h-2 mb-6">
+            <motion.div 
+              className="bg-gradient-saffron h-2 rounded-full"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+
+          {/* Habit List */}
+          <div className="space-y-3">
+            {habits.map((habit) => {
+              const isCompleted = completedHabits.includes(habit.id);
               
               return (
                 <motion.div
-                  key={quest.id}
-                  className={`rounded-2xl p-4 flex items-center justify-between transition-all ${
-                    isCompleted ? 'bg-muted/50' : 'bg-secondary/50'
+                  key={habit.id}
+                  className={`rounded-xl p-4 flex items-center justify-between transition-all ${
+                    isCompleted 
+                      ? 'bg-green-500/10 border border-green-500/30' 
+                      : 'bg-card border border-border'
                   }`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="h-12 w-12 flex items-center justify-center text-3xl shrink-0">
-                      {quest.icon}
+                  <div 
+                    className="flex items-center gap-3 flex-1 cursor-pointer"
+                    onClick={() => handleToggleHabit(habit)}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-lg ${
+                      isCompleted ? 'bg-green-500/20' : 'bg-muted'
+                    }`}>
+                      {isCompleted ? <Check className="h-5 w-5 text-green-500" /> : habit.icon}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="relative">
-                        <motion.span
-                          className={`text-lg font-semibold block truncate ${isCompleted ? 'text-muted-foreground' : 'text-foreground'}`}
-                          animate={{ opacity: isCompleted ? 0.6 : 1 }}
-                        >
-                          {quest.title}
-                        </motion.span>
-                        {isCompleted && (
-                          <motion.div
-                            className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted-foreground"
-                            initial={{ scaleX: 0, originX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ duration: 0.3 }}
-                          />
-                        )}
-                      </div>
-                      <p className={`text-sm truncate ${isCompleted ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>
-                        +{quest.reward} DP • {quest.description}
+                    <div className="flex-1">
+                      <h4 className={`font-medium ${isCompleted ? 'text-green-500 line-through' : 'text-foreground'}`}>
+                        {habit.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {habit.target_value} {habit.unit} • +10 DP
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 shrink-0">
-                    {quest.isCustom && (
-                      <>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingQuest(quest);
-                            setShowEditDialog(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingQuest(quest);
-                            setShowDeleteDialog(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </>
-                    )}
+                  {/* Edit/Delete buttons */}
+                  <div className="flex items-center gap-1">
                     <Button
-                      className={`h-12 w-12 rounded-full flex items-center justify-center transition-all ${
-                        isCompleted
-                          ? 'bg-muted hover:bg-muted/80'
-                          : 'bg-gradient-saffron hover:opacity-90'
-                      }`}
-                      onClick={() => handleToggleQuest(quest)}
-                      disabled={isLoading}
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingHabit(habit);
+                        setShowEditDialog(true);
+                      }}
                     >
-                      {isLoading ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" />
-                      ) : isCompleted ? (
-                        <Check className="h-6 w-6 text-muted-foreground" />
-                      ) : (
-                        <Plus className="h-6 w-6 text-primary-foreground" />
-                      )}
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingHabit(habit);
+                        setShowDeleteDialog(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
                 </motion.div>
@@ -532,241 +474,118 @@ const Quests = () => {
             })}
           </div>
 
-          {/* Info Card */}
-          <div className="mt-6 bg-secondary/50 rounded-xl p-4 flex items-start gap-3">
-            <Info className="h-5 w-5 text-saffron shrink-0 mt-0.5" />
-            <p className="text-sm text-muted-foreground">
-              Complete daily quests to build spiritual discipline. Quests refresh at midnight IST. Completed quests stay marked for that day only. 🙏
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Weekly Quests */}
-        <motion.div
-          className="card-3d rounded-2xl overflow-hidden"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <button
-            onClick={() => setShowWeekly(!showWeekly)}
-            className="w-full p-6 flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-dharma-gold" />
-              <h3 className="text-xl font-display text-foreground">Weekly Quests</h3>
-              <span className="text-xs bg-dharma-gold/20 text-dharma-gold px-2 py-1 rounded-full">
-                Bonus
-              </span>
+          {habits.length === 0 && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No habits yet. Add your first habit!</p>
             </div>
-            {showWeekly ? (
-              <ChevronUp className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronDown className="h-5 w-5 text-muted-foreground" />
-            )}
-          </button>
-
-          <AnimatePresence>
-            {showWeekly && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="px-6 pb-6 space-y-4"
-              >
-                {weeklyQuests.map((quest, index) => {
-                  const isCompleted = completedQuests.includes(quest.id);
-                  const isLoading = loadingQuestId === quest.id;
-                  
-                  return (
-                    <motion.div
-                      key={quest.id}
-                      className={`rounded-2xl p-4 flex items-center justify-between transition-all ${
-                        isCompleted ? 'bg-muted/50' : 'bg-secondary/50'
-                      }`}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.08 }}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 flex items-center justify-center text-3xl">
-                          {quest.icon}
-                        </div>
-                        <div>
-                          <span className={`text-lg font-semibold ${isCompleted ? 'text-muted-foreground' : 'text-foreground'}`}>
-                            {quest.title}
-                          </span>
-                          <p className="text-sm text-muted-foreground">
-                            +{quest.reward} DP • {quest.description}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                          isCompleted
-                            ? 'bg-muted hover:bg-muted/80'
-                            : 'bg-gradient-dharma hover:opacity-90'
-                        }`}
-                        onClick={() => handleToggleQuest(quest)}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current" />
-                        ) : isCompleted ? (
-                          <Check className="h-6 w-6 text-muted-foreground" />
-                        ) : (
-                          <Plus className="h-6 w-6 text-primary-foreground" />
-                        )}
-                      </Button>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          )}
         </motion.div>
 
-        {/* Add Quest Dialog */}
+        {/* Add Habit Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-[320px] mx-auto p-4">
+          <DialogContent className="max-w-[320px] p-4">
             <DialogHeader>
-              <DialogTitle className="font-display">Add Custom Quest</DialogTitle>
+              <DialogTitle className="text-lg">Add New Habit</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3 py-2">
-              <div>
-                <label className="text-sm font-medium text-foreground">Title</label>
-                <Input
-                  value={newQuest.title}
-                  onChange={(e) => setNewQuest({ ...newQuest, title: e.target.value })}
-                  placeholder="e.g., Read Scriptures"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Description</label>
-                <Textarea
-                  value={newQuest.description}
-                  onChange={(e) => setNewQuest({ ...newQuest, description: e.target.value })}
-                  placeholder="What should be done?"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Reward (DP)</label>
+            <div className="space-y-3">
+              <Input
+                placeholder="Habit name (e.g., Drink Water)"
+                value={newHabit.title}
+                onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
+              />
+              <Input
+                placeholder="Description (optional)"
+                value={newHabit.description}
+                onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })}
+              />
+              <div className="flex gap-2">
                 <Input
                   type="number"
-                  value={newQuest.reward}
-                  onChange={(e) => setNewQuest({ ...newQuest, reward: parseInt(e.target.value) || 25 })}
-                  min={5}
-                  max={100}
-                  className="mt-1"
+                  placeholder="Target"
+                  value={newHabit.target_value}
+                  onChange={(e) => setNewHabit({ ...newHabit, target_value: parseInt(e.target.value) || 1 })}
+                  className="w-20"
+                />
+                <Input
+                  placeholder="Unit (L, min, etc.)"
+                  value={newHabit.unit}
+                  onChange={(e) => setNewHabit({ ...newHabit, unit: e.target.value })}
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-              <Button variant="saffron" onClick={handleAddQuest}>Add Quest</Button>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowAddDialog(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleAddHabit}>
+                Add Habit
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Edit Quest Dialog */}
+        {/* Edit Habit Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-[320px] mx-auto p-4">
+          <DialogContent className="max-w-[320px] p-4">
             <DialogHeader>
-              <DialogTitle className="font-display text-base">Edit Quest</DialogTitle>
+              <DialogTitle className="text-lg">Edit Habit</DialogTitle>
             </DialogHeader>
-            {editingQuest && (
-              <div className="space-y-3 py-2">
-                <div>
-                  <label className="text-sm font-medium text-foreground">Title</label>
-                  <Input
-                    value={editingQuest.title}
-                    onChange={(e) => setEditingQuest({ ...editingQuest, title: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Description</label>
-                  <Textarea
-                    value={editingQuest.description}
-                    onChange={(e) => setEditingQuest({ ...editingQuest, description: e.target.value })}
-                    className="mt-1"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Reward (DP)</label>
+            {editingHabit && (
+              <div className="space-y-3">
+                <Input
+                  placeholder="Habit name"
+                  value={editingHabit.title}
+                  onChange={(e) => setEditingHabit({ ...editingHabit, title: e.target.value })}
+                />
+                <Input
+                  placeholder="Description"
+                  value={editingHabit.description}
+                  onChange={(e) => setEditingHabit({ ...editingHabit, description: e.target.value })}
+                />
+                <div className="flex gap-2">
                   <Input
                     type="number"
-                    value={editingQuest.reward}
-                    onChange={(e) => setEditingQuest({ ...editingQuest, reward: parseInt(e.target.value) || 25 })}
-                    min={5}
-                    max={100}
-                    className="mt-1"
+                    placeholder="Target"
+                    value={editingHabit.target_value}
+                    onChange={(e) => setEditingHabit({ ...editingHabit, target_value: parseInt(e.target.value) || 1 })}
+                    className="w-20"
+                  />
+                  <Input
+                    placeholder="Unit"
+                    value={editingHabit.unit}
+                    onChange={(e) => setEditingHabit({ ...editingHabit, unit: e.target.value })}
                   />
                 </div>
               </div>
             )}
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
-              <Button variant="saffron" onClick={handleEditQuest}>Save Changes</Button>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowEditDialog(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={handleEditHabit}>
+                Save
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation */}
+        {/* Delete Confirmation Dialog */}
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent className="max-w-[300px] mx-auto p-4">
+          <AlertDialogContent className="max-w-[320px] p-4">
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Quest?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete "{editingQuest?.title}"? This action cannot be undone.
+              <AlertDialogTitle className="text-lg">Delete Habit?</AlertDialogTitle>
+              <AlertDialogDescription className="text-sm">
+                This will permanently delete "{editingHabit?.title}".
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleDeleteQuest}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
+            <AlertDialogFooter className="gap-2">
+              <AlertDialogCancel className="h-9">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteHabit} className="bg-destructive text-destructive-foreground h-9">
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Completion Modal */}
-        <AnimatePresence>
-          {showCompletionCard && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="card-3d rounded-2xl p-8 max-w-sm w-full text-center"
-              >
-                <div className="text-6xl mb-4">🏆</div>
-                <h3 className="text-2xl font-display text-foreground mb-2">
-                  All Quests Complete!
-                </h3>
-                <p className="text-muted-foreground mb-6">
-                  {completionMessages[Math.floor(Math.random() * completionMessages.length)]}
-                </p>
-                <Button
-                  className="bg-gradient-saffron text-primary-foreground w-full"
-                  onClick={() => setShowCompletionCard(false)}
-                >
-                  Continue Journey
-                </Button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </MobileLayout>
   );

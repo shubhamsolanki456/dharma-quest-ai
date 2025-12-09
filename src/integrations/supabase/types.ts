@@ -76,6 +76,80 @@ export type Database = {
           },
         ]
       }
+      habit_completions: {
+        Row: {
+          completed_at: string
+          created_at: string
+          habit_id: string
+          id: string
+          user_id: string
+          value: number | null
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          habit_id: string
+          id?: string
+          user_id: string
+          value?: number | null
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          habit_id?: string
+          id?: string
+          user_id?: string
+          value?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           content: string
@@ -285,6 +359,33 @@ export type Database = {
           points_earned?: number
           quest_id?: number
           quest_title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      sin_logs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          logged_at: string
+          sin_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logged_at?: string
+          sin_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          logged_at?: string
+          sin_type?: string
           user_id?: string
         }
         Relationships: []

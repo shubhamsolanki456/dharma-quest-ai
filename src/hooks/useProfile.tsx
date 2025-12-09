@@ -95,9 +95,10 @@ export const useProfile = () => {
   };
 
   const addDharmaPoints = async (points: number) => {
-    if (!profile) return { error: 'No profile found' };
+    if (!profile || !user) return { error: 'No profile found' };
     
     const newPoints = profile.dharma_points + points;
+    // Level increases every 100 DP (level 1 = 0-99, level 2 = 100-199, etc.)
     const newLevel = Math.floor(newPoints / 100) + 1;
     
     // Update local state immediately for optimistic UI
@@ -110,19 +111,47 @@ export const useProfile = () => {
     cachedProfile = updatedProfile;
     setProfile(updatedProfile);
     
-    return updateProfile({
-      dharma_points: newPoints,
-      current_level: newLevel,
-      last_activity_date: new Date().toISOString().split('T')[0]
-    });
+    // Persist to database
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({
+          dharma_points: newPoints,
+          current_level: newLevel,
+          last_activity_date: new Date().toISOString().split('T')[0]
+        })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating dharma points:', error);
+        // Revert on error
+        cachedProfile = profile;
+        setProfile(profile);
+        return { error };
+      }
+
+      const finalProfile = data as UserProfile;
+      cachedProfile = finalProfile;
+      setProfile(finalProfile);
+      return { data: finalProfile, error: null };
+    } catch (error) {
+      console.error('Error updating dharma points:', error);
+      // Revert on error
+      cachedProfile = profile;
+      setProfile(profile);
+      return { error };
+    }
   };
 
-  const updateStreak = async () => {
+  const updateStreak = useCallback(async () => {
     if (!profile || !user) return { error: 'No profile found' };
     
     const today = new Date().toISOString().split('T')[0];
     const lastActivity = profile.last_activity_date;
     
+    // Already updated today
     if (lastActivity === today) {
       return { data: profile, error: null };
     }
@@ -143,17 +172,46 @@ export const useProfile = () => {
       newAppStreak = 1;
       newSinFreeStreak = 1;
     } else {
-      // Streak broken - reset to 1
+      // Streak broken - reset app streak to 1, but keep sin-free streak if they haven't logged a sin
       newAppStreak = 1;
-      newSinFreeStreak = 1;
+      // Sin-free streak continues unless user logs a sin
+      newSinFreeStreak = profile.sin_free_streak + 1;
     }
     
-    return updateProfile({
+    const updates = {
       app_streak: newAppStreak,
       sin_free_streak: newSinFreeStreak,
       last_activity_date: today
-    });
-  };
+    };
+
+    // Update local state immediately
+    const updatedProfile = { ...profile, ...updates };
+    cachedProfile = updatedProfile;
+    setProfile(updatedProfile);
+
+    // Persist to database
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating streak:', error);
+        return { error };
+      }
+
+      const finalProfile = data as UserProfile;
+      cachedProfile = finalProfile;
+      setProfile(finalProfile);
+      return { data: finalProfile, error: null };
+    } catch (error) {
+      console.error('Error updating streak:', error);
+      return { error };
+    }
+  }, [profile, user]);
 
   const refetch = () => {
     cachedProfile = null;
