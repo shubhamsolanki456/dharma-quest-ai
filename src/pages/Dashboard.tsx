@@ -5,6 +5,7 @@ import { DharmaProgress } from '@/components/DharmaProgress';
 import { DailyQuest } from '@/components/DailyQuest';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Confetti } from '@/components/Confetti';
 import { MessageCircle, BookOpen, PenLine, Mic, Brain, Sparkles, Heart, Star, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,6 +14,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { usePushNotifications, NotificationScheduler, SPIRITUAL_NOTIFICATIONS } from '@/hooks/usePushNotifications';
+import { useSoundEffects } from '@/hooks/useSoundEffects';
 import { toast } from 'sonner';
 import { shlokas, getTodaysShloka } from '@/data/shlokas';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,11 +49,10 @@ const allQuests = [
 ];
 
 // Get 3 random quests for today (seeded by IST date for consistency)
-const getRandomQuests = () => {
-  const todayIST = getISTDate();
+const getRandomQuests = (dateStr: string) => {
   let seed = 0;
-  for (let i = 0; i < todayIST.length; i++) {
-    seed += todayIST.charCodeAt(i);
+  for (let i = 0; i < dateStr.length; i++) {
+    seed += dateStr.charCodeAt(i);
   }
   
   const shuffled = [...allQuests].sort(() => {
@@ -68,6 +69,7 @@ const Dashboard = () => {
   const { profile, addDharmaPoints, updateStreak } = useProfile();
   const { subscription, hasActiveAccess } = useSubscription();
   const { permission, isSupported, requestPermission } = usePushNotifications();
+  const { playDPCollect, playQuestComplete } = useSoundEffects();
   const dpContainerRef = useRef<HTMLDivElement>(null);
   
   const [floatingDPs, setFloatingDPs] = useState<FloatingDP[]>([]);
@@ -75,6 +77,7 @@ const Dashboard = () => {
   const [completedQuestIds, setCompletedQuestIds] = useState<number[]>([]);
   const [isLoadingQuests, setIsLoadingQuests] = useState(true);
   const [currentDate, setCurrentDate] = useState(getISTDate());
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const level = profile?.current_level || 1;
   const totalDP = profile?.dharma_points || 0;
@@ -86,12 +89,24 @@ const Dashboard = () => {
   // Get today's shlok for the wisdom card
   const todayShlok = getTodaysShloka(shlokas);
   
-  const todaysQuests = useMemo(() => getRandomQuests(), [currentDate]);
+  // Memoize quests based on current date
+  const todaysQuests = useMemo(() => getRandomQuests(currentDate), [currentDate]);
   
   const quests = useMemo(() => 
     todaysQuests.map(q => ({ ...q, completed: completedQuestIds.includes(q.id) })),
     [todaysQuests, completedQuestIds]
   );
+
+  // Check for confetti flag on mount
+  useEffect(() => {
+    const shouldShowConfetti = sessionStorage.getItem('showDashboardConfetti');
+    if (shouldShowConfetti === 'true') {
+      setShowConfetti(true);
+      sessionStorage.removeItem('showDashboardConfetti');
+      // Hide confetti after animation
+      setTimeout(() => setShowConfetti(false), 5000);
+    }
+  }, []);
 
   // Fetch completed quests for today from database
   const fetchCompletedQuests = useCallback(async () => {
@@ -168,6 +183,9 @@ const Dashboard = () => {
     const quest = quests.find(q => q.id === questId);
     if (!quest || quest.completed || !user) return;
 
+    // Play sound effect
+    playQuestComplete();
+
     // Get click position for animation
     const rect = event.currentTarget.getBoundingClientRect();
     const sourceX = rect.left + rect.width / 2;
@@ -193,6 +211,7 @@ const Dashboard = () => {
       setTimeout(() => {
         setFloatingDPs(prev => prev.filter(dp => dp.id !== id));
         setDisplayedDP(prev => prev + quest.points);
+        playDPCollect();
       }, 1000);
 
       // Actually add points to profile
@@ -215,9 +234,7 @@ const Dashboard = () => {
     }
   };
 
-  const currentDharmaPoints = quests.filter(q => q.completed).reduce((sum, q) => sum + q.points, 0);
-
-const quickFeatures = [
+  const quickFeatures = [
     { icon: PenLine, label: 'Journal', color: 'text-primary-foreground', bgColor: 'bg-cyan-500', path: '/journal' },
     { icon: Mic, label: 'Voice Log', color: 'text-primary-foreground', bgColor: 'bg-saffron', path: '/voice-log' },
     { icon: Brain, label: 'Meditate', color: 'text-primary-foreground', bgColor: 'bg-lotus', path: '/meditation' },
@@ -225,8 +242,40 @@ const quickFeatures = [
     { icon: Sparkles, label: 'Manifest', color: 'text-primary-foreground', bgColor: 'bg-dharma', path: '/manifestation' },
   ];
 
+  // Animation variants for staggered loading
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4 }
+    }
+  };
+
+  const _itemVariantsOld = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.4, ease: "easeOut" }
+    }
+  };
+
   return (
     <MobileLayout currentPage="/dashboard">
+      {/* Confetti Animation */}
+      {showConfetti && <Confetti duration={5000} particleCount={100} />}
+      
       {/* Top Bar with orange gradient */}
       <div className="sticky top-0 z-50 bg-gradient-to-r from-primary via-saffron to-primary backdrop-blur-sm shadow-lg">
         <div className="flex items-center justify-center px-4 py-3 safe-top">
@@ -308,9 +357,14 @@ const quickFeatures = [
         )}
       </AnimatePresence>
 
-      <div className="p-4 space-y-6 pb-8">
+      <motion.div 
+        className="p-4 space-y-6 pb-24"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {/* Header with greeting */}
-        <div className="flex items-center justify-between">
+        <motion.div variants={itemVariants} className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-display text-foreground"><span className="font-extrabold tracking-wide">प्रणिपात</span> 🙏</h1>
             <p className="text-sm text-muted-foreground">Continue your spiritual journey</p>
@@ -327,23 +381,25 @@ const quickFeatures = [
               <span className="absolute top-1 right-1 h-2 w-2 bg-destructive rounded-full" />
             </Button>
           )}
-        </div>
+        </motion.div>
 
         {/* 3D Streak Card */}
-        <StreakCard3D appStreak={appStreak} sinFreeStreak={sinFreeStreak} />
+        <motion.div variants={itemVariants}>
+          <StreakCard3D appStreak={appStreak} sinFreeStreak={sinFreeStreak} />
+        </motion.div>
 
         {/* Progress - 3D style */}
-        <div className="card-3d-subtle rounded-xl overflow-hidden">
+        <motion.div variants={itemVariants} className="card-3d-subtle rounded-xl overflow-hidden">
           <DharmaProgress
             level={level}
             dharmaPoints={displayedDP}
             pointsToNext={100 - (displayedDP % 100)}
             title="Spiritual Growth"
           />
-        </div>
+        </motion.div>
 
         {/* Feature Actions */}
-        <div className="card-3d-subtle rounded-xl p-4">
+        <motion.div variants={itemVariants} className="card-3d-subtle rounded-xl p-4">
           <h3 className="font-display text-card-foreground mb-3">Spiritual Tools</h3>
           <div className="flex justify-between">
             {quickFeatures.map(({ icon: Icon, label, color, bgColor, path }) => (
@@ -359,10 +415,10 @@ const quickFeatures = [
               </button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Quick Actions - 3D style */}
-        <div className="card-3d-subtle rounded-xl p-4">
+        <motion.div variants={itemVariants} className="card-3d-subtle rounded-xl p-4">
           <h3 className="font-display text-card-foreground mb-3">Quick Actions</h3>
           <div className="grid grid-cols-2 gap-3">
             <Button 
@@ -382,10 +438,10 @@ const quickFeatures = [
               <span className="text-sm">Daily Shlok</span>
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         {/* Daily Quests */}
-        <div className="space-y-3">
+        <motion.div variants={itemVariants} className="space-y-3">
           <h3 className="font-display text-foreground">Today's Dharma Quests</h3>
           {quests.map((quest) => (
             <div 
@@ -401,27 +457,26 @@ const quickFeatures = [
               />
             </div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Today's Wisdom - 3D style with actual shlok */}
-        <Card 
-          className="card-3d rounded-xl overflow-hidden relative cursor-pointer"
-          onClick={() => navigate('/daily-shlok')}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-pink-500/70 to-rose-500/60" />
-          <div className="relative p-4 text-center">
-            <h3 className="font-display text-white mb-2">Today's Wisdom</h3>
-            <blockquote className="text-white/90 italic text-sm mb-2 line-clamp-2">
-              "{todayShlok.translation}"
-            </blockquote>
-            <p className="text-white/70 text-xs">- Bhagavad Gita {todayShlok.chapter}.{todayShlok.verse}</p>
-            <p className="text-white/60 text-xs mt-2">Tap to read more →</p>
-          </div>
-        </Card>
-
-        {/* Extra spacing at bottom */}
-        <div className="h-16" />
-      </div>
+        <motion.div variants={itemVariants}>
+          <Card 
+            className="card-3d rounded-xl overflow-hidden relative cursor-pointer"
+            onClick={() => navigate('/daily-shlok')}
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-600/80 via-pink-500/70 to-rose-500/60" />
+            <div className="relative p-4 text-center">
+              <h3 className="font-display text-white mb-2">Today's Wisdom</h3>
+              <blockquote className="text-white/90 italic text-sm mb-2 line-clamp-2">
+                "{todayShlok.translation}"
+              </blockquote>
+              <p className="text-white/70 text-xs">- Bhagavad Gita {todayShlok.chapter}.{todayShlok.verse}</p>
+              <p className="text-white/60 text-xs mt-2">Tap to read more →</p>
+            </div>
+          </Card>
+        </motion.div>
+      </motion.div>
     </MobileLayout>
   );
 };
