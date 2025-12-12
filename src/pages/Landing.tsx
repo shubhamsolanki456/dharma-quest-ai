@@ -41,7 +41,7 @@ const DotsIndicator = ({
   currentIndex: number; 
   setCurrentIndex: (index: number) => void;
 }) => (
-  <div className="flex justify-center gap-2 mt-14">
+  <div className="flex justify-center gap-2 mt-10">
     {Array.from({ length: totalSlides }).map((_, index) => (
       <button
         key={index}
