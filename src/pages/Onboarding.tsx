@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { ArrowRight, ArrowLeft, CheckCircle, Flower2, Sun, Heart, BookOpen, Zap } from 'lucide-react';
+import { OmIcon } from '@/components/OmIcon';
 
 interface Question {
   id: string;
@@ -32,7 +33,7 @@ const spiritualQuestions: Question[] = [
       { value: 'beginner', label: 'Just Starting', icon: '🌱' },
       { value: 'some', label: 'Know Some Basics', icon: '📖' },
       { value: 'familiar', label: 'Quite Familiar', icon: '🙏' },
-      { value: 'advanced', label: 'Very Knowledgeable', icon: '🕉️' },
+      { value: 'advanced', label: 'Very Knowledgeable', icon: '🙏' },
     ],
   },
   {
@@ -75,7 +76,7 @@ const introSteps = [
     content: (
       <div className="text-center space-y-6">
         <div className="bg-gradient-saffron p-6 rounded-full w-fit mx-auto animate-float">
-          <span className="text-4xl">🕉️</span>
+          <OmIcon className="w-10 h-10 text-primary-foreground" />
         </div>
         <p className="text-lg text-muted-foreground">
           Your AI-powered spiritual companion for authentic Hindu wisdom, 
@@ -159,8 +160,13 @@ const Onboarding = () => {
       return;
     }
 
+    // If user has completed onboarding, skip to dashboard or pricing
     if (subscription?.has_completed_onboarding) {
-      navigate('/pricing');
+      if (subscription.is_active) {
+        navigate('/dashboard');
+      } else {
+        navigate('/pricing');
+      }
     }
   }, [user, subscription, authLoading, subLoading, navigate]);
 
@@ -179,8 +185,11 @@ const Onboarding = () => {
       // Mark onboarding as complete
       await completeOnboarding();
       
-      // Navigate to start free trial page
-      navigate('/start-trial');
+      // Set flag to show confetti on dashboard
+      sessionStorage.setItem('showDashboardConfetti', 'true');
+      
+      // Navigate directly to dashboard
+      navigate('/dashboard');
     } catch (error) {
       console.error('Error completing onboarding:', error);
     } finally {
@@ -328,7 +337,7 @@ const Onboarding = () => {
             {isCompleting ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             ) : currentStep === totalSteps - 1 ? (
-              'Start Free Trial'
+              'Start Journey'
             ) : (
               'Next'
             )}
