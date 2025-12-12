@@ -51,7 +51,7 @@ const sinTypes = [
 
 const SinLog = () => {
   const { user, loading } = useAuth();
-  const { profile, updateProfile } = useProfile();
+  const { profile, updateProfile, refetch } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -116,8 +116,9 @@ const SinLog = () => {
 
       if (error) throw error;
 
-      // Reset sin-free streak to 0
+      // Reset sin-free streak to 0 and refetch to update UI
       await updateProfile({ sin_free_streak: 0 });
+      refetch(); // Force refetch to clear cache and get fresh data
 
       setSinLogs(prev => [data, ...prev]);
       setShowAddDialog(false);
@@ -161,6 +162,7 @@ const SinLog = () => {
 
     try {
       await updateProfile({ sin_free_streak: 0 });
+      refetch(); // Force refetch to clear cache and get fresh data
       setShowResetDialog(false);
       toast({ 
         title: 'Streak reset',

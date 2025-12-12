@@ -36,10 +36,11 @@ export const ShareModal = ({ isOpen, onClose, title, text, url }: ShareModalProp
   };
 
   const handleWhatsApp = () => {
-    // Use WhatsApp API with proper URL encoding
+    // Use WhatsApp API with proper URL encoding - use location.href for mobile compatibility
     const whatsappText = encodeURIComponent(fullText);
-    const whatsappUrl = `https://wa.me/?text=${whatsappText}`;
-    window.open(whatsappUrl, '_blank');
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${whatsappText}`;
+    // Use location.href for better mobile app detection
+    window.location.href = whatsappUrl;
     onClose();
   };
 

@@ -194,7 +194,7 @@ const Profile = () => {
             </div>
             <div className="text-center p-3 bg-dharma-gold/10 rounded-xl">
               <Target className="h-5 w-5 text-dharma-gold mx-auto mb-1" />
-              <p className="text-xl font-display text-dharma-gold">{profile?.sin_free_streak || 1}</p>
+              <p className="text-xl font-display text-dharma-gold">{profile?.sin_free_streak ?? 0}</p>
               <p className="text-xs text-muted-foreground">Sin-Free Days</p>
             </div>
           </div>
