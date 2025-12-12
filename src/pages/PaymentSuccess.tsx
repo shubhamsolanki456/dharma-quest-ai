@@ -1,16 +1,66 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Crown, ArrowRight, Sparkles } from 'lucide-react';
-import confetti from 'canvas-confetti';
+
+// CSS-based confetti component
+const Confetti = () => {
+  const [particles, setParticles] = useState<Array<{
+    id: number;
+    x: number;
+    delay: number;
+    duration: number;
+    color: string;
+  }>>([]);
+
+  useEffect(() => {
+    const colors = ['#FF6B35', '#FFB347', '#FFD700', '#FF8C00', '#FFA500', '#E65100', '#FF5722'];
+    const newParticles = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      x: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: 2 + Math.random() * 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    }));
+    setParticles(newParticles);
+  }, []);
+
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute w-3 h-3 rounded-sm"
+          style={{
+            left: `${particle.x}%`,
+            backgroundColor: particle.color,
+            top: '-20px',
+          }}
+          initial={{ y: -20, rotate: 0, opacity: 1 }}
+          animate={{
+            y: window.innerHeight + 100,
+            rotate: 360 * (Math.random() > 0.5 ? 1 : -1),
+            opacity: [1, 1, 0],
+          }}
+          transition={{
+            duration: particle.duration,
+            delay: particle.delay,
+            ease: 'easeOut',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planType = searchParams.get('plan') || 'monthly';
   const [showContent, setShowContent] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(true);
 
   const planNames: Record<string, string> = {
     weekly: 'Weekly',
@@ -19,57 +69,18 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
-    // Fire confetti from multiple angles
-    const duration = 3000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    function randomInRange(min: number, max: number) {
-      return Math.random() * (max - min) + min;
-    }
-
-    const interval = setInterval(function() {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      
-      // Left side confetti
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 },
-        colors: ['#FF6B35', '#FFB347', '#FFD700', '#FF8C00', '#FFA500']
-      });
-      
-      // Right side confetti
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 },
-        colors: ['#FF6B35', '#FFB347', '#FFD700', '#FF8C00', '#FFA500']
-      });
-    }, 250);
-
-    // Initial burst from center
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#FF6B35', '#FFB347', '#FFD700', '#FF8C00', '#FFA500']
-    });
-
     // Show content after a small delay
     setTimeout(() => setShowContent(true), 500);
-
-    return () => clearInterval(interval);
+    
+    // Hide confetti after animation
+    setTimeout(() => setShowConfetti(false), 5000);
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Confetti Animation */}
+      {showConfetti && <Confetti />}
+      
       {/* Background glow effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
