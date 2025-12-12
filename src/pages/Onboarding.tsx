@@ -70,12 +70,12 @@ const spiritualQuestions: Question[] = [
 
 const introSteps = [
   {
-    title: "प्रणिपात",
+    title: "🙏 प्रणिपात",
     subtitle: "Welcome to Dharma AI",
     content: (
       <div className="text-center space-y-6">
         <div className="bg-gradient-saffron p-6 rounded-full w-fit mx-auto animate-float">
-          <Flower2 className="h-12 w-12 text-primary-foreground" />
+          <span className="text-4xl">🕉️</span>
         </div>
         <p className="text-lg text-muted-foreground">
           Your AI-powered spiritual companion for authentic Hindu wisdom, 
@@ -85,7 +85,7 @@ const introSteps = [
     )
   },
   {
-    title: "Track Your Growth",
+    title: "🔥 Track Your Growth",
     subtitle: "Dual Streak System",
     content: (
       <div className="space-y-6">
@@ -108,7 +108,7 @@ const introSteps = [
     )
   },
   {
-    title: "14-Day Free Trial",
+    title: "🎁 7-Day Free Trial",
     subtitle: "No Credit Card Required",
     content: (
       <div className="space-y-4">
@@ -117,7 +117,7 @@ const introSteps = [
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-dharma" />
-              Full access for 14 days
+              Full access for 7 days
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4 text-dharma" />
@@ -179,8 +179,8 @@ const Onboarding = () => {
       // Mark onboarding as complete
       await completeOnboarding();
       
-      // Navigate to pricing
-      navigate('/pricing');
+      // Navigate to start free trial page
+      navigate('/start-trial');
     } catch (error) {
       console.error('Error completing onboarding:', error);
     } finally {

@@ -140,7 +140,10 @@ const Settings = () => {
   };
 
   const handleHelpCenter = () => {
-    window.location.href = 'mailto:thedharmaai@gmail.com?subject=Help%20Request%20-%20Dharma%20AI';
+    const email = 'thedharmaai@gmail.com';
+    const subject = encodeURIComponent('Help Request - Dharma AI');
+    const body = encodeURIComponent('Hi Dharma AI Team,\n\nI need help with:\n\n');
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
   };
 
   const handleSignOut = async () => {

@@ -93,8 +93,8 @@ const Pricing = () => {
       const success = await subscribeToPlan(planId as 'weekly' | 'monthly' | 'yearly');
 
       if (success) {
-        toast.success(`Successfully subscribed to ${plans.find(p => p.id === planId)?.name} plan! 🙏`);
-        navigate('/dashboard');
+        // Navigate to payment success page with confetti
+        navigate(`/payment-success?plan=${planId}`);
       } else {
         toast.error('Payment failed. Please try again.');
       }

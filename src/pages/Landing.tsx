@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Flower2, Star, Users, Award } from 'lucide-react';
+import { Star, Users, Award } from 'lucide-react';
 
 const slides = [
   {
@@ -41,7 +41,7 @@ const DotsIndicator = ({
   currentIndex: number; 
   setCurrentIndex: (index: number) => void;
 }) => (
-  <div className="flex justify-center gap-2 mt-6">
+  <div className="flex justify-center gap-2 mt-10">
     {Array.from({ length: totalSlides }).map((_, index) => (
       <button
         key={index}
@@ -79,7 +79,7 @@ const Landing = () => {
       <div className="py-4 flex justify-between items-center">
         <div className="flex items-center">
           <div className="bg-gradient-saffron p-2 rounded-full mr-2">
-            <Flower2 className="h-5 w-5 text-primary-foreground" />
+            <span className="text-xl">🕉️</span>
           </div>
           <h1 className="text-xl font-display bg-gradient-saffron bg-clip-text text-transparent">
             Dharma AI
@@ -87,7 +87,7 @@ const Landing = () => {
         </div>
         <Button
           variant="ghost"
-          className="text-foreground hover:bg-foreground/10"
+          className="text-foreground hover:bg-saffron/20 hover:text-saffron"
           onClick={() => navigate('/auth')}
         >
           Sign in
@@ -146,7 +146,7 @@ const Landing = () => {
               >
                 <div className="bg-gradient-to-br from-saffron/20 to-dharma/20 border border-saffron/30 rounded-2xl p-8 w-full max-w-sm text-center">
                   <div className="bg-gradient-saffron p-4 rounded-full w-fit mx-auto mb-4">
-                    <Flower2 className="h-8 w-8 text-primary-foreground" />
+                    <span className="text-2xl">🕉️</span>
                   </div>
                   <h3 className="text-xl font-display mb-2">{slides[currentIndex].title}</h3>
                   <p className="text-muted-foreground text-sm">{slides[currentIndex].description}</p>
@@ -182,7 +182,7 @@ const Landing = () => {
               <p className="text-xs text-muted-foreground">Users</p>
               <h3 className="text-2xl font-display text-saffron flex items-center justify-center gap-1">
                 <Users className="h-4 w-4" />
-                1k+
+                2k+
               </h3>
             </div>
             <div className="text-center">
@@ -212,7 +212,7 @@ const Landing = () => {
           <Button
             variant="saffron"
             className="w-full h-14 rounded-full text-lg font-display shadow-lg"
-            onClick={() => navigate('/onboarding')}
+            onClick={() => navigate('/auth')}
           >
             Begin Your Journey
           </Button>
@@ -227,13 +227,13 @@ const Landing = () => {
           <div className="flex gap-6 mb-2">
             <button
               className="text-saffron underline text-sm transition hover:text-dharma"
-              onClick={() => navigate('/privacy')}
+              onClick={() => navigate('/privacy-policy')}
             >
               Privacy Policy
             </button>
             <button
               className="text-saffron underline text-sm transition hover:text-dharma"
-              onClick={() => navigate('/terms')}
+              onClick={() => navigate('/terms-of-service')}
             >
               Terms & Conditions
             </button>
