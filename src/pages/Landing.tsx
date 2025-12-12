@@ -78,8 +78,10 @@ const Landing = () => {
       {/* Header section */}
       <div className="py-4 flex justify-between items-center">
         <div className="flex items-center">
-          <div className="bg-gradient-saffron p-2 rounded-full mr-2">
-            <span className="text-xl">🕉️</span>
+          <div className="bg-gradient-saffron p-2.5 rounded-full mr-2 flex items-center justify-center">
+            <svg className="w-5 h-5 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+            </svg>
           </div>
           <h1 className="text-xl font-display bg-gradient-saffron bg-clip-text text-transparent">
             Dharma AI
@@ -145,8 +147,10 @@ const Landing = () => {
                 }}
               >
                 <div className="bg-gradient-to-br from-saffron/20 to-dharma/20 border border-saffron/30 rounded-2xl p-8 w-full max-w-sm text-center">
-                  <div className="bg-gradient-saffron p-4 rounded-full w-fit mx-auto mb-4">
-                    <span className="text-2xl">🕉️</span>
+                  <div className="bg-gradient-saffron p-4 rounded-full w-fit mx-auto mb-4 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-primary-foreground" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                    </svg>
                   </div>
                   <h3 className="text-xl font-display mb-2">{slides[currentIndex].title}</h3>
                   <p className="text-muted-foreground text-sm">{slides[currentIndex].description}</p>

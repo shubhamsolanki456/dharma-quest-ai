@@ -143,7 +143,8 @@ const Settings = () => {
     const email = 'thedharmaai@gmail.com';
     const subject = encodeURIComponent('Help Request - Dharma AI');
     const body = encodeURIComponent('Hi Dharma AI Team,\n\nI need help with:\n\n');
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank');
+    // Use location.href for better email client detection
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
   const handleSignOut = async () => {

@@ -41,7 +41,9 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
         {/* Header with icon thumbnail */}
         <div className="flex items-start gap-3">
           <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-amber-300 via-orange-400 to-orange-500 flex items-center justify-center shadow-md border-2 border-white/30">
-            <span className="text-2xl">🕉️</span>
+            <svg className="w-7 h-7 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+            </svg>
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-display text-white drop-shadow-md">Spiritual Journey</h3>
