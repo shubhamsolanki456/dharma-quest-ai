@@ -8,7 +8,7 @@ interface PaywallGuardProps {
 }
 
 // Routes that don't require subscription
-const PUBLIC_ROUTES = ['/', '/landing', '/auth', '/pricing', '/onboarding', '/privacy-policy', '/terms-of-service'];
+const PUBLIC_ROUTES = ['/', '/landing', '/auth', '/pricing', '/onboarding', '/start-trial', '/payment-success', '/privacy-policy', '/terms-of-service'];
 
 export const PaywallGuard = ({ children }: PaywallGuardProps) => {
   const { user, loading: authLoading } = useAuth();

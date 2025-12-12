@@ -25,6 +25,8 @@ import TermsOfService from "./pages/TermsOfService";
 import SinLog from "./pages/SinLog";
 import NotFound from "./pages/NotFound";
 import Prayers from "./pages/Prayers";
+import StartFreeTrial from "./pages/StartFreeTrial";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -45,7 +47,9 @@ const App = () => (
             
             {/* Auth required routes */}
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/start-trial" element={<StartFreeTrial />} />
             <Route path="/pricing" element={<Pricing />} />
+            <Route path="/payment-success" element={<PaymentSuccess />} />
             
             {/* Protected routes (subscription required) */}
             <Route path="/dashboard" element={<Dashboard />} />
