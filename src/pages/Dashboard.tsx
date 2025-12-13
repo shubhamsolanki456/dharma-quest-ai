@@ -358,7 +358,7 @@ const Dashboard = () => {
       </AnimatePresence>
 
       <motion.div 
-        className="p-4 space-y-6 pb-24"
+        className="p-4 space-y-5 pb-20"
         variants={containerVariants}
         initial="hidden"
         animate="visible"

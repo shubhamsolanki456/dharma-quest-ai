@@ -69,7 +69,7 @@ const DailyShlok = () => {
 
   return (
     <MobileLayout currentPage="/daily-shlok">
-      <div className="p-4 space-y-6 pb-8">
+      <div className="p-4 space-y-5 pb-20">
         {/* Header */}
         <div className="text-center py-4">
           <div className="bg-gradient-saffron p-3 rounded-full w-fit mx-auto mb-4">
@@ -122,8 +122,8 @@ const DailyShlok = () => {
 
         {/* Deep Explanation */}
         <Card className="p-4 bg-gradient-to-br from-spiritual/5 to-lotus/5 border-spiritual/20">
-          <h3 className="font-display text-spiritual mb-3">Deep Meaning</h3>
-          <p className="text-muted-foreground leading-relaxed">{todayShlok.explanation}</p>
+          <h3 className="font-display text-spiritual mb-3 text-lg">Deep Meaning</h3>
+          <p className="text-foreground leading-relaxed text-base">{todayShlok.explanation}</p>
         </Card>
 
         {/* Practical Applications */}

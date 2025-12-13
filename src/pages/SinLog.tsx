@@ -198,7 +198,7 @@ const SinLog = () => {
 
   return (
     <MobileLayout currentPage="/sin-log">
-      <div className="space-y-6 pb-32 p-4">
+      <div className="space-y-5 pb-20 p-4">
         {/* Header Card */}
         <motion.div
           className="card-3d rounded-2xl p-6"
@@ -211,7 +211,7 @@ const SinLog = () => {
                 <Heart className="h-6 w-6 text-red-500" />
               </div>
               <div>
-                <h2 className="text-2xl font-display text-foreground">Sin-Free Journey</h2>
+                <h2 className="text-2xl font-display text-foreground">Sin-Free Jour ney</h2>
                 <p className="text-sm text-muted-foreground">Track and overcome your weaknesses</p>
               </div>
             </div>

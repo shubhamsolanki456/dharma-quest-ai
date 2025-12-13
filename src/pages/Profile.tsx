@@ -128,7 +128,7 @@ const Profile = () => {
 
   return (
     <MobileLayout currentPage="/profile">
-      <div className="space-y-6 pb-16">
+      <div className="space-y-5 pb-20">
         {/* Profile Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
