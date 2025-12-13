@@ -8,7 +8,9 @@ interface PaywallGuardProps {
 }
 
 // Routes that don't require subscription
-const PUBLIC_ROUTES = ['/', '/landing', '/auth', '/pricing', '/onboarding', '/start-trial', '/payment-success', '/privacy-policy', '/terms-of-service'];
+const PUBLIC_ROUTES = ['/', '/landing', '/auth', '/privacy-policy', '/terms-of-service'];
+// Routes that require auth but not subscription
+const AUTH_ONLY_ROUTES = ['/onboarding', '/start-free-trial', '/start-trial', '/pricing', '/payment-success'];
 
 export const PaywallGuard = ({ children }: PaywallGuardProps) => {
   const { user, loading: authLoading } = useAuth();
@@ -20,34 +22,47 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
     if (authLoading || subLoading) return;
 
     const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
+    const isAuthOnlyRoute = AUTH_ONLY_ROUTES.includes(location.pathname);
     
     // Not logged in - redirect to landing for protected routes
-    if (!user && !isPublicRoute) {
-      navigate('/');
-      return;
-    }
-
-    // Logged in but no subscription - create trial on onboarding
-    if (user && !subscription && location.pathname !== '/auth' && location.pathname !== '/onboarding') {
-      // Let onboarding handle subscription creation
+    if (!user) {
       if (!isPublicRoute) {
-        navigate('/onboarding');
+        navigate('/');
       }
       return;
     }
 
-    // Logged in with subscription
-    if (user && subscription) {
-      // Not completed onboarding - redirect to onboarding
-      if (!subscription.has_completed_onboarding && location.pathname !== '/onboarding') {
-        navigate('/onboarding');
+    // User is logged in
+    if (user) {
+      // No subscription yet - go to onboarding (unless already there or on auth-only routes)
+      if (!subscription) {
+        if (!isPublicRoute && !isAuthOnlyRoute) {
+          navigate('/onboarding');
+        }
+        return;
+      }
+
+      // Has subscription but not completed onboarding - redirect to onboarding
+      if (subscription && !subscription.has_completed_onboarding) {
+        if (location.pathname !== '/onboarding') {
+          navigate('/onboarding');
+        }
         return;
       }
 
       // Trial/subscription expired - redirect to pricing
-      if (!hasActiveAccess() && !isPublicRoute && location.pathname !== '/pricing') {
-        navigate('/pricing');
+      if (!hasActiveAccess()) {
+        if (!isPublicRoute && !isAuthOnlyRoute) {
+          navigate('/pricing');
+        }
         return;
+      }
+
+      // User has active access and is on auth-only routes - redirect to dashboard
+      if (hasActiveAccess() && subscription.has_completed_onboarding) {
+        if (location.pathname === '/onboarding' || location.pathname === '/start-free-trial' || location.pathname === '/start-trial') {
+          navigate('/dashboard');
+        }
       }
     }
   }, [user, subscription, authLoading, subLoading, location.pathname, navigate, hasActiveAccess]);

@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Check, MoreVertical, Trash2, Award } from "lucide-react";
+import { Plus, Check, MoreVertical, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { LevelUpCelebration } from "@/components/LevelUpCelebration";
+import { RainbowNotification } from "@/components/RainbowNotification";
 import {
   Dialog,
   DialogContent,
@@ -442,112 +443,39 @@ const Quests = () => {
         {/* Rainbow Notification Banners */}
         <AnimatePresence mode="wait">
           {completedCount === 0 && (
-            <motion.div 
+            <RainbowNotification
               key="start-banner"
-              variants={itemVariants}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative rounded-2xl overflow-hidden"
-            >
-              <div 
-                className="absolute inset-0 rounded-2xl"
-                style={{
-                  padding: '2px',
-                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
-                  backgroundSize: '200% 100%',
-                  animation: 'gradient-shift 3s linear infinite',
-                }}
-              />
-              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
-                <span className="text-3xl">🌅</span>
-                <div>
-                  <p className="font-display text-foreground text-base">Start your day strong!</p>
-                  <p className="text-sm text-muted-foreground">Complete your first quest to begin earning points</p>
-                </div>
-              </div>
-            </motion.div>
+              emoji="🌅"
+              title="Start your day strong!"
+              subtitle="Complete your first quest to begin earning points"
+            />
           )}
 
           {completedCount === 1 && (
-            <motion.div 
+            <RainbowNotification
               key="first-task-banner"
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative rounded-2xl overflow-hidden"
-            >
-              <div 
-                className="absolute inset-0 rounded-2xl"
-                style={{
-                  padding: '2px',
-                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
-                  backgroundSize: '200% 100%',
-                  animation: 'gradient-shift 3s linear infinite',
-                }}
-              />
-              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
-                <span className="text-3xl">🎉</span>
-                <div>
-                  <p className="font-display text-foreground text-base">First task of the day!</p>
-                  <p className="text-sm text-muted-foreground">Great start! Keep going to complete all quests.</p>
-                </div>
-              </div>
-            </motion.div>
+              emoji="🎉"
+              title="First task of the day!"
+              subtitle="Great start! Keep going to complete all quests."
+            />
           )}
 
           {completedCount >= Math.floor(totalHabits / 2) && completedCount < totalHabits && completedCount > 1 && (
-            <motion.div 
+            <RainbowNotification
               key="halfway-banner"
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative rounded-2xl overflow-hidden"
-            >
-              <div 
-                className="absolute inset-0 rounded-2xl"
-                style={{
-                  padding: '2px',
-                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
-                  backgroundSize: '200% 100%',
-                  animation: 'gradient-shift 3s linear infinite',
-                }}
-              />
-              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
-                <span className="text-3xl">🔥</span>
-                <div>
-                  <p className="font-display text-foreground text-base">Halfway there!</p>
-                  <p className="text-sm text-muted-foreground">You're doing amazing. Keep the momentum going!</p>
-                </div>
-              </div>
-            </motion.div>
+              emoji="🔥"
+              title="Halfway there!"
+              subtitle="You're doing amazing. Keep the momentum going!"
+            />
           )}
 
           {completedCount === totalHabits && totalHabits > 0 && (
-            <motion.div 
+            <RainbowNotification
               key="complete-banner"
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative rounded-2xl overflow-hidden"
-            >
-              <div 
-                className="absolute inset-0 rounded-2xl"
-                style={{
-                  padding: '2px',
-                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
-                  backgroundSize: '200% 100%',
-                  animation: 'gradient-shift 3s linear infinite',
-                }}
-              />
-              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
-                <span className="text-3xl">🏆</span>
-                <div>
-                  <p className="font-display text-foreground text-base">All quests completed!</p>
-                  <p className="text-sm text-muted-foreground">You're a true dharma warrior! Come back tomorrow.</p>
-                </div>
-              </div>
-            </motion.div>
+              emoji="🏆"
+              title="All quests completed!"
+              subtitle="You're a true dharma warrior! Come back tomorrow."
+            />
           )}
         </AnimatePresence>
 

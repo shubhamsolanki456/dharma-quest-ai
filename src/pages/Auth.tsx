@@ -39,10 +39,11 @@ const Auth = () => {
     return () => unsubscribe.stop();
   }, []);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated - check subscription status
   useEffect(() => {
     if (!loading && user) {
-      navigate('/dashboard');
+      // After auth, redirect to onboarding to handle subscription flow
+      navigate('/onboarding');
     }
   }, [user, loading, navigate]);
 
@@ -95,6 +96,7 @@ const Auth = () => {
         toast.error(error.message || 'Failed to sign up. Please try again later.');
       } else {
         toast.success('Account created successfully!');
+        // Navigation will be handled by useEffect when user state updates
       }
     } catch (error) {
       toast.error('Failed to sign up. Please try again later.');
