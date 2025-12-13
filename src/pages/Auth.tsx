@@ -25,6 +25,8 @@ const Auth = () => {
   const y = useMotionValue(0);
   const rotateX = useTransform(y, [-100, 100], [5, -5]);
   const rotateY = useTransform(x, [-100, 100], [-5, 5]);
+  const translateX = useTransform(x, [-540, 540], [-15, 15]);
+  const translateY = useTransform(y, [-960, 960], [-15, 15]);
 
   // Sharp light beam animation
   const beamAngle = useMotionValue(0);
@@ -149,8 +151,8 @@ const Auth = () => {
           transformStyle: 'preserve-3d',
           rotateX,
           rotateY,
-          x: useTransform(x, [-540, 540], [-15, 15]),
-          y: useTransform(y, [-960, 960], [-15, 15]),
+          x: translateX,
+          y: translateY,
           backdropFilter: 'none'
         }}
         whileHover={{ scale: 1.005 }}
