@@ -129,7 +129,7 @@ const StartFreeTrial = () => {
           transition={{ delay: 0.3 }}
           className="text-3xl md:text-4xl font-display text-center mb-3"
         >
-          <span className="bg-gradient-saffron bg-clip-text text-transparent">
+          <span className="text-gradient-saffron">
             Your 7-Day Free Trial
           </span>
         </motion.h1>

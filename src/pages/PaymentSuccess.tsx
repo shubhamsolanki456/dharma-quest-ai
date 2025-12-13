@@ -131,7 +131,7 @@ const PaymentSuccess = () => {
             className="text-center mb-6"
           >
             <h1 className="text-3xl md:text-4xl font-display mb-3">
-              <span className="bg-gradient-saffron bg-clip-text text-transparent">
+              <span className="text-gradient-saffron">
                 Welcome to Premium!
               </span>
             </h1>
