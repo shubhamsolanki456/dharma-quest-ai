@@ -440,85 +440,116 @@ const Quests = () => {
         </motion.div>
 
         {/* Rainbow Notification Banners */}
-        {completedCount === 0 && (
-          <motion.div 
-            variants={itemVariants}
-            className="relative rounded-xl p-[2px] overflow-hidden"
-            style={{
-              background: 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)'
-            }}
-          >
-            <div className="bg-card rounded-xl p-4 flex items-center gap-3">
-              <div className="bg-gradient-saffron p-2 rounded-full">
-                <Award className="h-5 w-5 text-primary-foreground" />
+        <AnimatePresence mode="wait">
+          {completedCount === 0 && (
+            <motion.div 
+              key="start-banner"
+              variants={itemVariants}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative rounded-2xl overflow-hidden"
+            >
+              <div 
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                  padding: '2px',
+                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
+                  backgroundSize: '200% 100%',
+                  animation: 'gradient-shift 3s linear infinite',
+                }}
+              />
+              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
+                <span className="text-3xl">🌅</span>
+                <div>
+                  <p className="font-display text-foreground text-base">Start your day strong!</p>
+                  <p className="text-sm text-muted-foreground">Complete your first quest to begin earning points</p>
+                </div>
               </div>
-              <div>
-                <p className="font-display text-foreground">Start your day strong! 🌅</p>
-                <p className="text-sm text-muted-foreground">Complete your first quest to begin earning points</p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {completedCount === 1 && (
-          <motion.div 
-            variants={itemVariants}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-xl p-[2px] overflow-hidden"
-            style={{
-              background: 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)'
-            }}
-          >
-            <div className="bg-card rounded-xl p-4 flex items-center gap-3">
-              <span className="text-2xl">🎉</span>
-              <div>
-                <p className="font-display text-foreground">First task of the day!</p>
-                <p className="text-sm text-muted-foreground">Great start! Keep going to complete all quests.</p>
+          {completedCount === 1 && (
+            <motion.div 
+              key="first-task-banner"
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative rounded-2xl overflow-hidden"
+            >
+              <div 
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                  padding: '2px',
+                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
+                  backgroundSize: '200% 100%',
+                  animation: 'gradient-shift 3s linear infinite',
+                }}
+              />
+              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
+                <span className="text-3xl">🎉</span>
+                <div>
+                  <p className="font-display text-foreground text-base">First task of the day!</p>
+                  <p className="text-sm text-muted-foreground">Great start! Keep going to complete all quests.</p>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {completedCount >= Math.floor(totalHabits / 2) && completedCount < totalHabits && completedCount > 1 && (
-          <motion.div 
-            variants={itemVariants}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-xl p-[2px] overflow-hidden"
-            style={{
-              background: 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)'
-            }}
-          >
-            <div className="bg-card rounded-xl p-4 flex items-center gap-3">
-              <span className="text-2xl">🔥</span>
-              <div>
-                <p className="font-display text-foreground">Halfway there!</p>
-                <p className="text-sm text-muted-foreground">You're doing amazing. Keep the momentum going!</p>
+          {completedCount >= Math.floor(totalHabits / 2) && completedCount < totalHabits && completedCount > 1 && (
+            <motion.div 
+              key="halfway-banner"
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative rounded-2xl overflow-hidden"
+            >
+              <div 
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                  padding: '2px',
+                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
+                  backgroundSize: '200% 100%',
+                  animation: 'gradient-shift 3s linear infinite',
+                }}
+              />
+              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
+                <span className="text-3xl">🔥</span>
+                <div>
+                  <p className="font-display text-foreground text-base">Halfway there!</p>
+                  <p className="text-sm text-muted-foreground">You're doing amazing. Keep the momentum going!</p>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {completedCount === totalHabits && totalHabits > 0 && (
-          <motion.div 
-            variants={itemVariants}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative rounded-xl p-[2px] overflow-hidden"
-            style={{
-              background: 'linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)'
-            }}
-          >
-            <div className="bg-card rounded-xl p-4 flex items-center gap-3">
-              <span className="text-2xl">🏆</span>
-              <div>
-                <p className="font-display text-foreground">All quests completed!</p>
-                <p className="text-sm text-muted-foreground">You're a true dharma warrior! Come back tomorrow.</p>
+          {completedCount === totalHabits && totalHabits > 0 && (
+            <motion.div 
+              key="complete-banner"
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative rounded-2xl overflow-hidden"
+            >
+              <div 
+                className="absolute inset-0 rounded-2xl"
+                style={{
+                  padding: '2px',
+                  background: 'linear-gradient(90deg, #FF6B6B, #FFE66D, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD, #FF6B6B)',
+                  backgroundSize: '200% 100%',
+                  animation: 'gradient-shift 3s linear infinite',
+                }}
+              />
+              <div className="relative bg-card rounded-2xl m-[2px] p-4 flex items-center gap-3">
+                <span className="text-3xl">🏆</span>
+                <div>
+                  <p className="font-display text-foreground text-base">All quests completed!</p>
+                  <p className="text-sm text-muted-foreground">You're a true dharma warrior! Come back tomorrow.</p>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Quest List */}
         <div className="space-y-4">

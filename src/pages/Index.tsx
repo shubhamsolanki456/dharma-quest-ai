@@ -14,20 +14,20 @@ const Index = () => {
 
     // User is logged in
     if (user) {
-      // Has subscription and completed onboarding and has access - go to dashboard
-      if (subscription?.has_completed_onboarding && hasActiveAccess()) {
+      // Has active access (trial or subscription) - go to dashboard
+      if (hasActiveAccess()) {
         navigate('/dashboard');
         return;
       }
       
-      // Has subscription but not completed onboarding - go to onboarding
-      if (subscription && !subscription.has_completed_onboarding) {
+      // User exists but no subscription yet - go to onboarding
+      if (!subscription) {
         navigate('/onboarding');
         return;
       }
 
-      // No subscription yet - go to onboarding to create one
-      if (!subscription) {
+      // Has subscription but not completed onboarding - go to onboarding
+      if (subscription && !subscription.has_completed_onboarding) {
         navigate('/onboarding');
         return;
       }

@@ -57,7 +57,7 @@ const allShlokas: Shloka[] = [
     sanskrit: "धृतराष्ट्र उवाच। धर्मक्षेत्रे कुरुक्षेत्रे समवेता युयुत्सवः। मामकाः पाण्डवाश्चैव किमकुर्वत सञ्जय॥",
     transliteration: "Dhṛtarāṣṭra uvāca: dharma-kṣetre kuru-kṣetre samavetā yuyutsavaḥ, māmakāḥ pāṇḍavāś caiva kim akurvata sañjaya",
     translation: "Dhritarashtra said: O Sanjaya, what did my sons and the sons of Pandu do when they gathered on the holy field of Kurukshetra, eager for battle?",
-    explanation: "This opening verse sets the stage for the entire Bhagavad Gita. Dhritarashtra, being blind, asks Sanjaya to describe the events at Kurukshetra. The term 'dharma-kshetra' indicates this is a sacred battlefield where dharma will be established.",
+    explanation: "This opening verse sets the stage for the entire Bhagavad Gita. Dhritarashtra, being blind, asks Sanjaya to describe the events at Kurukshetra. The term 'dharma-kshetra' indicates this is a sacred battlefield where dharma will be established. This question reveals Dhritarashtra's anxiety - he knows deep down that adharma cannot prevail on sacred ground. The word 'mamakah' (my sons) shows his attachment and bias, while the mention of both sides 'eager for battle' sets up the moral conflict that will be resolved through Krishna's teachings. This verse reminds us that righteousness has a place in the world, and that sacred spaces and moments call forth our highest selves.",
     practicalApplication: [
       "Recognize that every moment is an opportunity to choose dharma",
       "Seek wise counsel when making important decisions",
@@ -88,7 +88,7 @@ const allShlokas: Shloka[] = [
     sanskrit: "कार्पण्यदोषोपहतस्वभावः पृच्छामि त्वां धर्मसम्मूढचेताः। यच्छ्रेयः स्यान्निश्चितं ब्रूहि तन्मे शिष्यस्तेऽहं शाधि मां त्वां प्रपन्नम्॥",
     transliteration: "Kārpaṇya-doṣopahata-svabhāvaḥ pṛcchāmi tvāṁ dharma-sammūḍha-cetāḥ, yac chreyaḥ syān niścitaṁ brūhi tan me śiṣyas te 'haṁ śādhi māṁ tvāṁ prapannam",
     translation: "My heart is overcome by the weakness of misery, my mind is confused about dharma. I ask You to tell me what is truly good for me. I am Your disciple; please instruct me, for I have surrendered unto You.",
-    explanation: "This is the moment when Arjuna becomes a true student. He admits his confusion, surrenders his ego, and asks Krishna for guidance. This surrender is the beginning of spiritual learning.",
+    explanation: "This is the moment when Arjuna becomes a true student. He admits his confusion, surrenders his ego, and asks Krishna for guidance. This surrender is the beginning of spiritual learning. Arjuna's words 'karpanya-doshopahata-svabhava' reveal that his natural warrior spirit has been overcome by a sense of helplessness. He acknowledges his confusion about dharma - what is right and what is wrong. Most importantly, he declares himself a disciple (shishya) and offers complete surrender (prapannam). This verse teaches us that true knowledge can only be received when we approach with humility and openness. The ego must step aside for wisdom to enter. Arjuna's vulnerability here is not weakness but the highest form of strength - the courage to admit we need help.",
     practicalApplication: [
       "Admit when you don't know the right path",
       "Surrender to divine guidance with humility",
@@ -103,7 +103,7 @@ const allShlokas: Shloka[] = [
     sanskrit: "श्रीभगवानुवाच। अशोच्यानन्वशोचस्त्वं प्रज्ञावादांश्च भाषसे। गतासूनगतासूंश्च नानुशोचन्ति पण्डिताः॥",
     transliteration: "Śrī-bhagavān uvāca: aśocyān anvaśocas tvaṁ prajñā-vādāṁś ca bhāṣase, gatāsūn agatāsūṁś ca nānuśocanti paṇḍitāḥ",
     translation: "The Supreme Lord said: You grieve for those who should not be grieved for, yet you speak words of wisdom. The wise grieve neither for the living nor for the dead.",
-    explanation: "Krishna begins His teachings by pointing out the irony - Arjuna speaks wise words but acts unwisely. True wisdom means understanding the eternal nature of the soul, which is neither born nor dies.",
+    explanation: "Krishna begins His teachings by pointing out the irony - Arjuna speaks wise words but acts unwisely. True wisdom means understanding the eternal nature of the soul, which is neither born nor dies. This verse is the beginning of Krishna's discourse on the nature of the Self (Atman). The word 'pandita' refers to one who has true knowledge - not just intellectual understanding but experiential wisdom. Krishna gently points out that Arjuna's grief contradicts the wisdom he claims to possess. The truly wise understand that the soul is eternal, and therefore death is merely a transition, not an ending. This teaching forms the foundation of the Gita's philosophy - that we are not our bodies but eternal spiritual beings. When we truly understand this, grief for the 'dead' or 'living' becomes meaningless.",
     practicalApplication: [
       "Look beyond the physical to see the eternal",
       "Don't let grief cloud your judgment",
@@ -208,7 +208,7 @@ const allShlokas: Shloka[] = [
     sanskrit: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन। मा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥",
     transliteration: "Karmaṇy evādhikāras te mā phaleṣu kadācana, mā karma-phala-hetur bhūr mā te saṅgo 'stv akarmaṇi",
     translation: "You have the right to perform your prescribed duties, but you are not entitled to the fruits of your actions. Never consider yourself to be the cause of the results of your activities, nor be attached to inaction.",
-    explanation: "This is one of the most important verses in the Bhagavad Gita. Lord Krishna teaches Arjuna about Nishkama Karma - selfless action without attachment to results. The verse emphasizes focusing on action while releasing attachment to outcomes.",
+    explanation: "This is one of the most important verses in the Bhagavad Gita. Lord Krishna teaches Arjuna about Nishkama Karma - selfless action without attachment to results. The verse emphasizes focusing on action while releasing attachment to outcomes. This teaching has four parts: First, we have the right (adhikara) to perform our duties - this is our birthright and responsibility. Second, we have no claim over the results - outcomes depend on countless factors beyond our control. Third, we should not consider ourselves the sole cause of results - this protects us from ego when things go well and despair when they don't. Fourth, this doesn't mean we should stop acting - inaction is not the solution. This verse teaches us to do our best while leaving the results to the divine. It's the secret to finding peace in action and freedom from anxiety about the future.",
     practicalApplication: [
       "Focus on the quality of your work, not just the rewards",
       "Release attachment to specific outcomes in your daily tasks",
