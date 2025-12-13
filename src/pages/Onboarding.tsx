@@ -185,11 +185,8 @@ const Onboarding = () => {
       // Mark onboarding as complete
       await completeOnboarding();
       
-      // Set flag to show confetti on dashboard
-      sessionStorage.setItem('showDashboardConfetti', 'true');
-      
-      // Navigate directly to dashboard
-      navigate('/dashboard');
+      // Navigate to start free trial page
+      navigate('/start-free-trial');
     } catch (error) {
       console.error('Error completing onboarding:', error);
     } finally {

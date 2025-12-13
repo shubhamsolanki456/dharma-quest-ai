@@ -68,6 +68,8 @@ const StartFreeTrial = () => {
 
   const handleStartTrial = async () => {
     setIsStarting(true);
+    // Set flag to show confetti on dashboard
+    sessionStorage.setItem('showDashboardConfetti', 'true');
     // Small delay for animation feel
     await new Promise(resolve => setTimeout(resolve, 800));
     navigate('/dashboard');

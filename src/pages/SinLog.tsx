@@ -211,7 +211,7 @@ const SinLog = () => {
                 <Heart className="h-6 w-6 text-red-500" />
               </div>
               <div>
-                <h2 className="text-2xl font-display text-foreground">Sin-Free Jour ney</h2>
+                <h2 className="text-2xl font-display text-foreground">Sin-Free Journey</h2>
                 <p className="text-sm text-muted-foreground">Track and overcome your weaknesses</p>
               </div>
             </div>

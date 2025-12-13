@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { DebugTimeSkip } from "@/components/DebugTimeSkip";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
@@ -47,6 +48,7 @@ const App = () => (
             
             {/* Auth required routes */}
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/start-free-trial" element={<StartFreeTrial />} />
             <Route path="/start-trial" element={<StartFreeTrial />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
@@ -69,6 +71,8 @@ const App = () => (
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          {/* Debug time skip button - remove in production */}
+          <DebugTimeSkip />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
