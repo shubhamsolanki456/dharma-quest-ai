@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { DebugTimeSkip } from "@/components/DebugTimeSkip";
+import { PaywallGuard } from "@/components/PaywallGuard";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
@@ -38,39 +39,41 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/landing" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms-of-service" element={<TermsOfService />} />
-            
-            {/* Auth required routes */}
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/start-free-trial" element={<StartFreeTrial />} />
-            <Route path="/start-trial" element={<StartFreeTrial />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            
-            {/* Protected routes (subscription required) */}
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/ai-guide" element={<AIGuide />} />
-            <Route path="/quests" element={<Quests />} />
-            <Route path="/daily-shlok" element={<DailyShlok />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/meditation" element={<Meditation />} />
-            <Route path="/manifestation" element={<Manifestation />} />
-            <Route path="/mantra-jaap" element={<MantraJaap />} />
-            <Route path="/voice-log" element={<VoiceLog />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/sin-log" element={<SinLog />} />
-            <Route path="/prayers" element={<Prayers />} />
-            
-            {/* Catch-all */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <PaywallGuard>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/landing" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              
+              {/* Auth required routes */}
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/start-free-trial" element={<StartFreeTrial />} />
+              <Route path="/start-trial" element={<StartFreeTrial />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              
+              {/* Protected routes (subscription required) */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/ai-guide" element={<AIGuide />} />
+              <Route path="/quests" element={<Quests />} />
+              <Route path="/daily-shlok" element={<DailyShlok />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/meditation" element={<Meditation />} />
+              <Route path="/manifestation" element={<Manifestation />} />
+              <Route path="/mantra-jaap" element={<MantraJaap />} />
+              <Route path="/voice-log" element={<VoiceLog />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/sin-log" element={<SinLog />} />
+              <Route path="/prayers" element={<Prayers />} />
+              
+              {/* Catch-all */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PaywallGuard>
           {/* Debug time skip button - remove in production */}
           <DebugTimeSkip />
         </BrowserRouter>

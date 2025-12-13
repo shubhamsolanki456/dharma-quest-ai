@@ -14,29 +14,26 @@ const Index = () => {
 
     // User is logged in
     if (user) {
-      // Has active access (trial or subscription) - go to dashboard
-      if (hasActiveAccess()) {
-        navigate('/dashboard');
-        return;
-      }
-      
-      // User exists but no subscription yet - go to onboarding
+      // No subscription yet - go to onboarding
       if (!subscription) {
         navigate('/onboarding');
         return;
       }
 
       // Has subscription but not completed onboarding - go to onboarding
-      if (subscription && !subscription.has_completed_onboarding) {
+      if (!subscription.has_completed_onboarding) {
         navigate('/onboarding');
         return;
       }
 
-      // Trial/subscription expired - go to pricing
-      if (!hasActiveAccess()) {
-        navigate('/pricing');
+      // Completed onboarding and has active access - go to dashboard
+      if (hasActiveAccess()) {
+        navigate('/dashboard');
         return;
       }
+
+      // Trial/subscription expired - go to pricing
+      navigate('/pricing');
     }
   }, [user, subscription, authLoading, subLoading, navigate, hasActiveAccess]);
 

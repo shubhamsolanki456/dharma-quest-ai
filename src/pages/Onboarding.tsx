@@ -160,13 +160,9 @@ const Onboarding = () => {
       return;
     }
 
-    // If user has completed onboarding, skip to dashboard or pricing
+    // If user has completed onboarding and has active access, go to dashboard
     if (subscription?.has_completed_onboarding) {
-      if (subscription.is_active) {
-        navigate('/dashboard');
-      } else {
-        navigate('/pricing');
-      }
+      navigate('/dashboard');
     }
   }, [user, subscription, authLoading, subLoading, navigate]);
 
