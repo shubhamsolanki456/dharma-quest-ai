@@ -176,7 +176,7 @@ const AIGuide = () => {
 
   return (
     <MobileLayout currentPage="/ai-guide">
-      <div className="flex flex-col h-[calc(100vh-5rem)]">
+      <div className="flex flex-col h-[calc(100vh-6rem)]">
         {/* Header */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
