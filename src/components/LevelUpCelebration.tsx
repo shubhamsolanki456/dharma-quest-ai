@@ -80,7 +80,7 @@ export const LevelUpCelebration = ({ isOpen, onClose, newLevel }: LevelUpCelebra
             >
               <div className="flex items-center justify-center gap-2">
                 <Star className="h-6 w-6 text-saffron fill-saffron" />
-                <span className="text-5xl font-bold bg-gradient-to-r from-saffron to-dharma bg-clip-text text-transparent">
+                <span className="text-5xl font-bold text-gradient-saffron">
                   {newLevel}
                 </span>
                 <Star className="h-6 w-6 text-saffron fill-saffron" />

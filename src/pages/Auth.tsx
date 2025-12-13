@@ -144,7 +144,7 @@ const Auth = () => {
 
       {/* 3D CARD */}
       <motion.div
-        className="w-[105%] h-auto min-h-[600px] bg-gradient-to-br from-card/80 to-muted/70 border border-border/50 rounded-3xl shadow-2xl overflow-hidden relative z-10"
+        className="w-[105%] h-auto min-h-[400px] bg-gradient-to-br from-card/80 to-muted/70 border border-border/50 rounded-3xl shadow-2xl overflow-hidden relative z-10"
         style={{
           transformStyle: 'preserve-3d',
           rotateX,
@@ -188,7 +188,7 @@ const Auth = () => {
 
           <div className="text-center mb-8">
             <motion.h1
-              className="text-3xl md:text-4xl font-display bg-clip-text text-transparent bg-gradient-saffron mb-4"
+              className="text-3xl md:text-4xl font-display text-gradient-saffron mb-4"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}

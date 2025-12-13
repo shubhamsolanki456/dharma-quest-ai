@@ -126,7 +126,7 @@ const Pricing = () => {
 
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-display mb-3 bg-gradient-to-r from-saffron to-dharma bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-4xl font-display mb-3 text-gradient-saffron">
             Choose Your Path
           </h1>
           <p className="text-lg text-muted-foreground mb-4">
