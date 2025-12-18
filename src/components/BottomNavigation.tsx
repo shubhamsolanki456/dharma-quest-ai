@@ -34,8 +34,9 @@ export const BottomNavigation = memo(({ currentPage }: BottomNavigationProps) =>
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : 100 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[360px] bg-card border-t border-border safe-bottom z-50 rounded-t-2xl"
+        className="fixed bottom-0 left-0 right-0 flex justify-center safe-bottom z-50"
       >
+        <div className="w-[360px] bg-card border-t border-border rounded-t-2xl">
         <div className="flex items-center justify-around px-1 py-2.5">
           {navItems.map(({ icon: Icon, label, path }) => {
             const isActive = location.pathname === path;
@@ -54,6 +55,7 @@ export const BottomNavigation = memo(({ currentPage }: BottomNavigationProps) =>
               </button>
             );
           })}
+        </div>
         </div>
       </motion.div>
     </AnimatePresence>
