@@ -34,23 +34,23 @@ export const BottomNavigation = memo(({ currentPage }: BottomNavigationProps) =>
         initial={{ y: 0 }}
         animate={{ y: isVisible ? 0 : 100 }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="fixed bottom-0 inset-x-0 max-w-md mx-auto bg-card border-t border-border safe-bottom z-50 rounded-t-2xl"
+        className="fixed bottom-0 inset-x-0 w-[360px] mx-auto bg-card border-t border-border safe-bottom z-50 rounded-t-2xl"
       >
-        <div className="flex items-center justify-around px-2 py-3">
+        <div className="flex items-center justify-around px-1 py-2.5">
           {navItems.map(({ icon: Icon, label, path }) => {
             const isActive = location.pathname === path;
             return (
               <button
                 key={path}
                 onClick={() => handleNavigate(path)}
-                className={`flex flex-col items-center gap-1 h-auto py-2 px-4 transition-all rounded-lg ${
+                className={`flex flex-col items-center gap-0.5 h-auto py-1.5 px-2.5 transition-all rounded-lg ${
                   isActive 
                     ? 'text-saffron bg-saffron/10' 
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 <Icon className={`h-5 w-5 ${isActive ? 'text-saffron' : ''}`} />
-                <span className="text-xs font-medium">{label}</span>
+                <span className="text-[10px] font-medium">{label}</span>
               </button>
             );
           })}
