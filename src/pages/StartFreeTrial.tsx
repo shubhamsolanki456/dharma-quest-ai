@@ -2,61 +2,16 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { motion } from 'framer-motion';
-import { Sparkles, CheckCircle, Crown, Zap, Gift, ArrowRight } from 'lucide-react';
-
-// CSS-based confetti component
-const Confetti = () => {
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    x: number;
-    delay: number;
-    duration: number;
-    color: string;
-  }>>([]);
-
-  useEffect(() => {
-    const colors = ['#FF6B35', '#FFB347', '#FFD700', '#FF8C00', '#FFA500', '#E65100', '#FF5722', '#4CAF50', '#2196F3'];
-    const newParticles = Array.from({ length: 60 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      delay: Math.random() * 1.5,
-      duration: 2 + Math.random() * 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    }));
-    setParticles(newParticles);
-  }, []);
-
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
-      {particles.map((particle) => (
-        <motion.div
-          key={particle.id}
-          className="absolute w-3 h-3 rounded-sm"
-          style={{
-            left: `${particle.x}%`,
-            backgroundColor: particle.color,
-            top: '-20px',
-          }}
-          initial={{ y: -20, rotate: 0, opacity: 1 }}
-          animate={{
-            y: window.innerHeight + 100,
-            rotate: 360 * (Math.random() > 0.5 ? 1 : -1),
-            opacity: [1, 1, 0],
-          }}
-          transition={{
-            duration: particle.duration,
-            delay: particle.delay,
-            ease: 'easeOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-};
+import { Sparkles, CheckCircle, Gift, ArrowRight } from 'lucide-react';
+import { Confetti } from '@/components/Confetti';
 
 const StartFreeTrial = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { subscription, loading: subLoading, hasActiveAccess } = useSubscription();
   const [isStarting, setIsStarting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
 
@@ -65,6 +20,25 @@ const StartFreeTrial = () => {
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
   }, []);
+
+  // Redirect checks
+  useEffect(() => {
+    if (authLoading || subLoading) return;
+    
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    // If no subscription or hasn't completed onboarding, go to onboarding
+    if (!subscription || !subscription.has_completed_onboarding) {
+      navigate('/onboarding');
+      return;
+    }
+
+    // If already has active access and completed trial start, go to dashboard
+    // This check will be handled by handleStartTrial
+  }, [user, subscription, authLoading, subLoading, navigate, hasActiveAccess]);
 
   const handleStartTrial = async () => {
     setIsStarting(true);
@@ -82,6 +56,14 @@ const StartFreeTrial = () => {
     { icon: '🙏', text: 'Daily Personalized Quests' },
     { icon: '📊', text: 'Progress Analytics' },
   ];
+
+  if (authLoading || subLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4 relative overflow-hidden">

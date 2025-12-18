@@ -8,30 +8,31 @@ interface ConfettiProps {
 
 export const Confetti = ({ duration = 5000, particleCount = 100 }: ConfettiProps) => {
   useEffect(() => {
-    // Trigger confetti on mount - matching the reference app's LockedDashboard
-    const timer = setTimeout(() => {
-      // Left side burst
-      confetti({
-        particleCount: 125,
-        angle: 60,
-        spread: 85,
-        startVelocity: 75,
-        origin: { x: 0, y: 1 },
-        colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'],
-      });
+    if (typeof window !== 'undefined') {
+      const timer = setTimeout(() => {
+        // Left side burst
+        confetti({
+          particleCount: 125,
+          angle: 60,
+          spread: 85,
+          startVelocity: 75,
+          origin: { x: 0, y: 1 },
+          colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'],
+        });
 
-      // Right side burst
-      confetti({
-        particleCount: 75,
-        angle: 120,
-        spread: 85,
-        startVelocity: 75,
-        origin: { x: 1, y: 1 },
-        colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'],
-      });
-    }, 500);
+        // Right side burst
+        confetti({
+          particleCount: 75,
+          angle: 120,
+          spread: 85,
+          startVelocity: 75,
+          origin: { x: 1, y: 1 },
+          colors: ['#FF0000', '#00FF00', '#0000FF', '#FFFF00'],
+        });
+      }, 1500);
 
-    return () => clearTimeout(timer);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   // This component doesn't render anything - confetti is drawn on canvas
