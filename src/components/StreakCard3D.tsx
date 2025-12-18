@@ -85,6 +85,9 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
             <p className="text-2xl font-display text-white">{sinFreeStreak} <span className="text-base text-white/70">days</span></p>
           </div>
         </div>
+        
+        {/* Tap to manage */}
+        <p className="text-center text-white/50 text-xs mt-2">Tap to manage your journey</p>
       </div>
     </div>
   );
