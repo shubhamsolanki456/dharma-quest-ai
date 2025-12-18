@@ -50,18 +50,18 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
         return;
       }
 
-      // Completed onboarding - check if trial was actually started
-      const trialStarted = subscription.trial_start_date && new Date(subscription.trial_start_date) <= new Date();
+      // Completed onboarding - check if trial was explicitly activated
+      const trialActivated = localStorage.getItem('trial_activated') === 'true';
       
-      if (!trialStarted) {
-        // Hasn't started trial yet - must go to start-free-trial page
+      if (!trialActivated) {
+        // Hasn't activated trial yet - must go to start-free-trial page
         if (!isPublicRoute && !isAuthOnlyRoute) {
           navigate('/start-free-trial');
         }
         return;
       }
 
-      // Trial started - check if it's still active
+      // Trial activated - check if it's still active
       if (!hasActiveAccess()) {
         // Trial/subscription expired - PAYWALL ENFORCED
         // Redirect to pricing from any protected route
@@ -71,8 +71,8 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
         return;
       }
 
-      // User has active access - redirect away from auth-only routes to dashboard
-      if (hasActiveAccess() && subscription.has_completed_onboarding) {
+      // User has active access - redirect away from onboarding/trial routes to dashboard
+      if (hasActiveAccess() && trialActivated) {
         if (location.pathname === '/onboarding' || 
             location.pathname === '/start-free-trial' || 
             location.pathname === '/start-trial') {

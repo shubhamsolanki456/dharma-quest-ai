@@ -20,6 +20,9 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
+    // Mark trial as activated (user now has premium)
+    localStorage.setItem('trial_activated', 'true');
+    
     // Show content after a small delay
     setTimeout(() => setShowContent(true), 500);
     

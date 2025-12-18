@@ -42,6 +42,8 @@ const StartFreeTrial = () => {
 
   const handleStartTrial = async () => {
     setIsStarting(true);
+    // Mark trial as activated
+    localStorage.setItem('trial_activated', 'true');
     // Set flag to show confetti on dashboard
     sessionStorage.setItem('showDashboardConfetti', 'true');
     // Small delay for animation feel
