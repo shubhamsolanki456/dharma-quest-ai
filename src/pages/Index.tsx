@@ -26,13 +26,11 @@ const Index = () => {
         return;
       }
 
-      // Check if trial was activated (has active access)
-      // If has_completed_onboarding but no active access = hasn't started trial yet
-      // We need to check if they actually started the trial
-      const trialStarted = subscription.trial_start_date && new Date(subscription.trial_start_date) <= new Date();
+      // Check if trial was explicitly activated via the start trial page
+      const trialActivated = localStorage.getItem('trial_activated') === 'true';
       
-      if (!trialStarted) {
-        // Completed onboarding but hasn't started trial
+      if (!trialActivated) {
+        // Completed onboarding but hasn't activated trial
         navigate('/start-free-trial');
         return;
       }
