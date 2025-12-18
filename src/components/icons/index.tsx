@@ -1,40 +1,40 @@
 import * as React from "react";
+import omSvg from '@/assets/icons/om.svg';
+import shastraSvg from '@/assets/icons/shastra.svg';
+import mapsSvg from '@/assets/icons/maps.svg';
 
 interface IconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;
 }
 
-// Om Icon from uxwing - will use the downloaded SVG
-export const OmIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }) => (
+// Om Icon from uxwing
+export const OmIconNew: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <img 
-    src="/src/assets/icons/om.svg" 
+    src={omSvg} 
     className={className}
     alt="Om"
-    {...props as any}
   />
 );
 
 // Hindu Shastra Icon
-export const ShastraIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }) => (
+export const ShastraIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <img 
-    src="/src/assets/icons/shastra.svg" 
+    src={shastraSvg} 
     className={className}
     alt="Shastra"
-    {...props as any}
   />
 );
 
 // Maps/Route Icon
-export const MapsIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }) => (
+export const MapsIcon: React.FC<{ className?: string }> = ({ className = "w-6 h-6" }) => (
   <img 
-    src="/src/assets/icons/maps.svg" 
+    src={mapsSvg} 
     className={className}
     alt="Maps"
-    {...props as any}
   />
 );
 
-// Star Icon (simple SVG since download failed)
+// Star Icon (inline SVG since download failed)
 export const StarFullIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }) => (
   <svg 
     viewBox="0 0 122.88 117.19" 
@@ -46,7 +46,7 @@ export const StarFullIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...pr
   </svg>
 );
 
-// Robot Icon (simple SVG since download failed)
+// Robot Icon (inline SVG since download failed)
 export const RobotIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }) => (
   <svg 
     viewBox="0 0 24 24" 
@@ -58,7 +58,7 @@ export const RobotIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props
   </svg>
 );
 
-// Eye Icon (simple SVG since download failed)
+// Eye Icon (inline SVG since download failed)
 export const EyeIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }) => (
   <svg 
     viewBox="0 0 24 24" 
@@ -69,5 +69,3 @@ export const EyeIcon: React.FC<IconProps> = ({ className = "w-6 h-6", ...props }
     <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
   </svg>
 );
-
-export default { OmIcon, ShastraIcon, MapsIcon, StarFullIcon, RobotIcon, EyeIcon };

@@ -59,6 +59,25 @@ const getISTDate = () => {
   return istTime.toISOString().split('T')[0];
 };
 
+// Motivation messages matching ExercisePlan.tsx
+const firstExerciseMessages = [
+  "Great start! You're building momentum. Keep it up! 🌟",
+  "First task done! Every journey begins with a single step. 💪",
+  "Excellent! You're on your way to a productive day! 🚀"
+];
+
+const halfwayMessages = [
+  "You're halfway there! Keep going to maximize your spiritual growth! 💪",
+  "Amazing progress! Just a few more quests to go! 🔥",
+  "Halfway done! You're doing incredible! ✨"
+];
+
+const completionMessages = [
+  "Outstanding! You've completed all quests for today! 🏆",
+  "Congratulations! A perfect day of dharmic practice! 🎉",
+  "You're a true dharma warrior! All quests complete! 🙏"
+];
+
 const Quests = () => {
   const { user, loading } = useAuth();
   const { profile, addDharmaPoints } = useProfile();
@@ -78,7 +97,12 @@ const Quests = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [newLevel, setNewLevel] = useState(1);
-  const [firstTaskToast, setFirstTaskToast] = useState(false);
+  
+  // Motivation card state - matching ExercisePlan.tsx
+  const [showMotivationCard, setShowMotivationCard] = useState(false);
+  const [motivationMessage, setMotivationMessage] = useState('');
+  const [isHalfwayMessage, setIsHalfwayMessage] = useState(false);
+  const [hasShownFirstMessage, setHasShownFirstMessage] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -191,6 +215,7 @@ const Quests = () => {
       if (newDate !== currentDate) {
         setCurrentDate(newDate);
         setCompletedHabits([]);
+        setHasShownFirstMessage(false);
         loadCompletedHabits();
       }
     };
@@ -198,6 +223,38 @@ const Quests = () => {
     const interval = setInterval(checkMidnight, 60000);
     return () => clearInterval(interval);
   }, [currentDate, loadCompletedHabits]);
+
+  // Motivation card logic - matching ExercisePlan.tsx useEffect
+  useEffect(() => {
+    if (!habits.length || completedHabits.length === 0) return;
+
+    const totalHabits = habits.length;
+    const currentCompleted = completedHabits.length;
+
+    // First task message
+    if (currentCompleted === 1 && !hasShownFirstMessage) {
+      setHasShownFirstMessage(true);
+      setIsHalfwayMessage(false);
+      const messages = firstExerciseMessages;
+      setMotivationMessage(messages[Math.floor(Math.random() * messages.length)]);
+      setShowMotivationCard(true);
+    }
+
+    // Halfway message
+    const halfwayPoint = Math.ceil(totalHabits / 2);
+    if (currentCompleted === halfwayPoint && currentCompleted > 1) {
+      setIsHalfwayMessage(true);
+      setMotivationMessage(halfwayMessages[Math.floor(Math.random() * halfwayMessages.length)]);
+      setShowMotivationCard(true);
+    }
+
+    // Completion message
+    if (currentCompleted === totalHabits) {
+      setIsHalfwayMessage(false);
+      setMotivationMessage(completionMessages[Math.floor(Math.random() * completionMessages.length)]);
+      setShowMotivationCard(true);
+    }
+  }, [completedHabits, habits.length, hasShownFirstMessage]);
 
   const getAutoEmoji = (title: string): string => {
     const lower = title.toLowerCase();
@@ -314,7 +371,6 @@ const Quests = () => {
     
     const isCompleted = completedHabits.includes(habit.id);
     const todayIST = getISTDate();
-    const wasFirstTask = completedHabits.length === 0 && !isCompleted;
     
     triggerHaptic(isCompleted ? 'light' : 'success');
     
@@ -358,18 +414,10 @@ const Quests = () => {
           setShowLevelUp(true);
         }
         
-        // Show first task notification
-        if (wasFirstTask) {
-          toast({ 
-            title: '🎉 First task of the day!',
-            description: 'Great start! Keep going to complete all quests.'
-          });
-        } else {
-          toast({ 
-            title: `+10 Dharma Points earned! 🙏`,
-            description: `${habit.title} completed!`
-          });
-        }
+        toast({ 
+          title: `+10 Dharma Points earned! 🙏`,
+          description: `${habit.title} completed!`
+        });
       }
     } catch (error) {
       console.error('Error toggling habit:', error);
@@ -380,7 +428,6 @@ const Quests = () => {
 
   const completedCount = completedHabits.length;
   const totalHabits = habits.length;
-  const progress = totalHabits > 0 ? (completedCount / totalHabits) * 100 : 0;
 
   // Animation variants
   const containerVariants = {
@@ -397,15 +444,6 @@ const Quests = () => {
       opacity: 1,
       y: 0,
       transition: { duration: 0.4 }
-    }
-  };
-
-  const _oldItemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.4, ease: "easeOut" }
     }
   };
 
@@ -440,41 +478,14 @@ const Quests = () => {
           </div>
         </motion.div>
 
-        {/* Rainbow Notification Banners */}
-        <AnimatePresence mode="wait">
-          {completedCount === 0 && (
+        {/* Rainbow Notification Card - Matching ExercisePlan.tsx exactly */}
+        <AnimatePresence>
+          {showMotivationCard && (
             <RainbowNotification
-              key="start-banner"
-              emoji="🌅"
-              title="Start your day strong!"
-              subtitle="Complete your first quest to begin earning points"
-            />
-          )}
-
-          {completedCount === 1 && (
-            <RainbowNotification
-              key="first-task-banner"
-              emoji="🎉"
-              title="First task of the day!"
-              subtitle="Great start! Keep going to complete all quests."
-            />
-          )}
-
-          {completedCount >= Math.floor(totalHabits / 2) && completedCount < totalHabits && completedCount > 1 && (
-            <RainbowNotification
-              key="halfway-banner"
-              emoji="🔥"
-              title="Halfway there!"
-              subtitle="You're doing amazing. Keep the momentum going!"
-            />
-          )}
-
-          {completedCount === totalHabits && totalHabits > 0 && (
-            <RainbowNotification
-              key="complete-banner"
-              emoji="🏆"
-              title="All quests completed!"
-              subtitle="You're a true dharma warrior! Come back tomorrow."
+              title="Keep going!"
+              subtitle={motivationMessage}
+              isHalfway={isHalfwayMessage}
+              onDismiss={() => setShowMotivationCard(false)}
             />
           )}
         </AnimatePresence>
@@ -482,7 +493,7 @@ const Quests = () => {
         {/* Quest List */}
         <div className="space-y-4">
           <AnimatePresence>
-            {habits.map((habit, index) => {
+            {habits.map((habit) => {
               const isCompleted = completedHabits.includes(habit.id);
               
               return (
@@ -520,122 +531,80 @@ const Quests = () => {
                         >
                           {habit.title}
                         </motion.span>
-                        {isCompleted && (
-                          <motion.div
-                            className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted-foreground"
-                            initial={{ scaleX: 0, originX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ duration: 0.3 }}
-                          />
-                        )}
+                        {/* Strikethrough animation */}
+                        <motion.div
+                          className="absolute left-0 top-1/2 h-0.5 bg-muted-foreground"
+                          initial={{ width: 0 }}
+                          animate={{ width: isCompleted ? '100%' : 0 }}
+                          transition={{ duration: 0.3 }}
+                        />
                       </div>
-                      <div className="relative">
-                        <motion.span
-                          className={`text-sm ${isCompleted ? 'text-muted-foreground' : 'text-muted-foreground'}`}
-                          initial={false}
-                          animate={{ opacity: isCompleted ? 0.7 : 1 }}
-                        >
-                          {habit.target_value} {habit.unit} • +10 DP
-                        </motion.span>
-                        {isCompleted && (
-                          <motion.div
-                            className="absolute top-1/2 left-0 right-0 h-0.5 bg-muted-foreground"
-                            initial={{ scaleX: 0, originX: 0 }}
-                            animate={{ scaleX: 1 }}
-                            transition={{ duration: 0.3, delay: 0.1 }}
-                          />
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {habit.description}
-                      </div>
+                      <p className="text-sm text-muted-foreground">{habit.description}</p>
                     </div>
                   </div>
                   
                   {/* Toggle Button */}
-                  <Button
-                    className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                      isCompleted
-                        ? 'bg-muted hover:bg-muted/80'
-                        : 'bg-saffron hover:bg-saffron/80'
-                    }`}
+                  <button
                     onClick={() => handleToggleHabit(habit)}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                      isCompleted
+                        ? 'bg-dharma text-white'
+                        : 'bg-muted border-2 border-border hover:border-saffron'
+                    }`}
                   >
                     {isCompleted ? (
-                      <Check className="h-6 w-6 text-foreground" />
+                      <Check className="h-6 w-6" />
                     ) : (
-                      <Plus className="h-6 w-6 text-white" />
+                      <Plus className="h-6 w-6 text-muted-foreground" />
                     )}
-                  </Button>
+                  </button>
                 </motion.div>
               );
             })}
           </AnimatePresence>
-
+          
           {/* Add Custom Quest Button */}
-          <motion.div variants={itemVariants}>
-            <Button
-              variant="outline"
-              className="w-full rounded-3xl py-6 border-2 border-dashed border-border bg-card text-foreground hover:bg-muted hover:text-foreground flex items-center justify-center gap-2"
-              onClick={() => setShowAddDialog(true)}
-            >
-              <Plus className="h-6 w-6" />
-              Add custom quest
-            </Button>
-          </motion.div>
+          <motion.button
+            variants={itemVariants}
+            onClick={() => setShowAddDialog(true)}
+            className="w-full rounded-3xl p-4 border-2 border-dashed border-border hover:border-saffron transition-colors flex items-center justify-center gap-2 text-muted-foreground hover:text-foreground"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add custom quest</span>
+          </motion.button>
         </div>
 
-        {habits.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No quests yet. Add your first quest!</p>
-          </div>
-        )}
+        {/* Level Up Celebration */}
+        <LevelUpCelebration
+          isOpen={showLevelUp}
+          onClose={() => setShowLevelUp(false)}
+          newLevel={newLevel}
+        />
 
-        {/* Add Quest Dialog */}
+        {/* Add Habit Dialog */}
         <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogContent className="max-w-[320px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-display">Add New Quest</DialogTitle>
+              <DialogTitle>Add New Quest</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Quest Name</Label>
                 <Input
                   id="title"
-                  placeholder="e.g., Morning Walk"
                   value={newHabit.title}
                   onChange={(e) => setNewHabit({ ...newHabit, title: e.target.value })}
+                  placeholder="e.g., Morning Meditation"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description (optional)</Label>
                 <Input
                   id="description"
-                  placeholder="e.g., Walk for 30 minutes"
                   value={newHabit.description}
                   onChange={(e) => setNewHabit({ ...newHabit, description: e.target.value })}
+                  placeholder="e.g., 10 minutes of silent meditation"
                 />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="target">Target</Label>
-                  <Input
-                    id="target"
-                    type="number"
-                    min={1}
-                    value={newHabit.target_value}
-                    onChange={(e) => setNewHabit({ ...newHabit, target_value: parseInt(e.target.value) || 1 })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="unit">Unit</Label>
-                  <Input
-                    id="unit"
-                    placeholder="e.g., min, L"
-                    value={newHabit.unit}
-                    onChange={(e) => setNewHabit({ ...newHabit, unit: e.target.value })}
-                  />
-                </div>
               </div>
             </div>
             <DialogFooter>
@@ -649,11 +618,11 @@ const Quests = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Edit Quest Dialog */}
+        {/* Edit Habit Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-[320px]">
+          <DialogContent>
             <DialogHeader>
-              <DialogTitle className="font-display">Edit Quest</DialogTitle>
+              <DialogTitle>Edit Quest</DialogTitle>
             </DialogHeader>
             {editingHabit && (
               <div className="space-y-4 py-4">
@@ -673,45 +642,25 @@ const Quests = () => {
                     onChange={(e) => setEditingHabit({ ...editingHabit, description: e.target.value })}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-target">Target</Label>
-                    <Input
-                      id="edit-target"
-                      type="number"
-                      min={1}
-                      value={editingHabit.target_value}
-                      onChange={(e) => setEditingHabit({ ...editingHabit, target_value: parseInt(e.target.value) || 1 })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-unit">Unit</Label>
-                    <Input
-                      id="edit-unit"
-                      value={editingHabit.unit}
-                      onChange={(e) => setEditingHabit({ ...editingHabit, unit: e.target.value })}
-                    />
-                  </div>
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full text-destructive border-destructive/30 hover:bg-destructive/10"
-                  onClick={() => {
-                    setShowEditDialog(false);
-                    setShowDeleteDialog(true);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Quest
-                </Button>
               </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="flex gap-2">
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  setShowEditDialog(false);
+                  setShowDeleteDialog(true);
+                }}
+                className="mr-auto"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
               <Button variant="saffron" onClick={handleEditHabit}>
-                Save Changes
+                Save
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -723,27 +672,17 @@ const Quests = () => {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Quest?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete "{editingHabit?.title}". This action cannot be undone.
+                Are you sure you want to delete "{editingHabit?.title}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={handleDeleteHabit}
-              >
+              <AlertDialogAction onClick={handleDeleteHabit} className="bg-destructive text-destructive-foreground">
                 Delete
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-
-        {/* Level Up Celebration */}
-        <LevelUpCelebration
-          isOpen={showLevelUp}
-          onClose={() => setShowLevelUp(false)}
-          newLevel={newLevel}
-        />
       </motion.div>
     </MobileLayout>
   );
