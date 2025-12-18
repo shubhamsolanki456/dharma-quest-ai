@@ -1,59 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Crown, ArrowRight, Sparkles } from 'lucide-react';
-
-// CSS-based confetti component
-const Confetti = () => {
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    x: number;
-    delay: number;
-    duration: number;
-    color: string;
-  }>>([]);
-
-  useEffect(() => {
-    const colors = ['#FF6B35', '#FFB347', '#FFD700', '#FF8C00', '#FFA500', '#E65100', '#FF5722'];
-    const newParticles = Array.from({ length: 50 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100,
-      delay: Math.random() * 2,
-      duration: 2 + Math.random() * 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
-    }));
-    setParticles(newParticles);
-  }, []);
-
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-50">
-      {particles.map((particle) => (
-        <motion.div
-          key={particle.id}
-          className="absolute w-3 h-3 rounded-sm"
-          style={{
-            left: `${particle.x}%`,
-            backgroundColor: particle.color,
-            top: '-20px',
-          }}
-          initial={{ y: -20, rotate: 0, opacity: 1 }}
-          animate={{
-            y: window.innerHeight + 100,
-            rotate: 360 * (Math.random() > 0.5 ? 1 : -1),
-            opacity: [1, 1, 0],
-          }}
-          transition={{
-            duration: particle.duration,
-            delay: particle.delay,
-            ease: 'easeOut',
-          }}
-        />
-      ))}
-    </div>
-  );
-};
+import { Confetti } from '@/components/Confetti';
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
