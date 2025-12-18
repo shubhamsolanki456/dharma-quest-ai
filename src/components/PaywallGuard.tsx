@@ -7,9 +7,9 @@ interface PaywallGuardProps {
   children: React.ReactNode;
 }
 
-// Routes that don't require subscription
+// Routes that don't require auth at all
 const PUBLIC_ROUTES = ['/', '/landing', '/auth', '/privacy-policy', '/terms-of-service'];
-// Routes that require auth but not subscription
+// Routes that require auth but not active subscription
 const AUTH_ONLY_ROUTES = ['/onboarding', '/start-free-trial', '/start-trial', '/pricing', '/payment-success'];
 
 export const PaywallGuard = ({ children }: PaywallGuardProps) => {
@@ -34,33 +34,48 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
 
     // User is logged in
     if (user) {
-      // No subscription yet - go to onboarding (unless already there or on auth-only routes)
+      // No subscription record yet - they need to complete onboarding first
       if (!subscription) {
+        if (!isPublicRoute && !isAuthOnlyRoute && location.pathname !== '/onboarding') {
+          navigate('/onboarding');
+        }
+        return;
+      }
+
+      // Has subscription record but hasn't completed onboarding
+      if (!subscription.has_completed_onboarding) {
+        if (location.pathname !== '/onboarding' && !isPublicRoute) {
+          navigate('/onboarding');
+        }
+        return;
+      }
+
+      // Completed onboarding - check if trial was actually started
+      const trialStarted = subscription.trial_start_date && new Date(subscription.trial_start_date) <= new Date();
+      
+      if (!trialStarted) {
+        // Hasn't started trial yet - must go to start-free-trial page
         if (!isPublicRoute && !isAuthOnlyRoute) {
-          navigate('/onboarding');
+          navigate('/start-free-trial');
         }
         return;
       }
 
-      // Has subscription but not completed onboarding - redirect to onboarding
-      if (subscription && !subscription.has_completed_onboarding) {
-        if (location.pathname !== '/onboarding') {
-          navigate('/onboarding');
-        }
-        return;
-      }
-
-      // Trial/subscription expired - redirect to pricing
+      // Trial started - check if it's still active
       if (!hasActiveAccess()) {
+        // Trial/subscription expired - PAYWALL ENFORCED
+        // Redirect to pricing from any protected route
         if (!isPublicRoute && !isAuthOnlyRoute) {
           navigate('/pricing');
         }
         return;
       }
 
-      // User has active access and is on auth-only routes - redirect to dashboard
+      // User has active access - redirect away from auth-only routes to dashboard
       if (hasActiveAccess() && subscription.has_completed_onboarding) {
-        if (location.pathname === '/onboarding' || location.pathname === '/start-free-trial' || location.pathname === '/start-trial') {
+        if (location.pathname === '/onboarding' || 
+            location.pathname === '/start-free-trial' || 
+            location.pathname === '/start-trial') {
           navigate('/dashboard');
         }
       }
