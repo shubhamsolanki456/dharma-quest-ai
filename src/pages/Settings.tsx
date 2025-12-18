@@ -235,24 +235,25 @@ const Settings = () => {
 
         {/* Subscription Status Badge */}
         <Card className={`card-3d-subtle p-4 rounded-xl ${isTrialOrExpired ? 'bg-gradient-to-r from-saffron/10 to-dharma/10' : ''}`}>
-          <div className="flex items-center gap-4">
-            <div className={`p-2 rounded-lg ${subInfo.color}`}>
-              {subInfo.icon ? <subInfo.icon className={`h-6 w-6 ${subInfo.textColor}`} /> : <Crown className={`h-6 w-6 ${subInfo.textColor}`} />}
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg shrink-0 ${subInfo.color}`}>
+              {subInfo.icon ? <subInfo.icon className={`h-5 w-5 ${subInfo.textColor}`} /> : <Crown className={`h-5 w-5 ${subInfo.textColor}`} />}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <p className="font-display text-foreground">Subscription</p>
-                <Badge className={`${subInfo.color} ${subInfo.textColor} border-0`}>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="font-display text-foreground text-sm">Subscription</p>
+                <Badge className={`${subInfo.color} ${subInfo.textColor} border-0 text-[10px] px-1.5 py-0.5`}>
                   {subInfo.status}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {isTrialOrExpired ? 'Upgrade for full access' : 'Full access enabled'}
               </p>
             </div>
             <Button 
               variant={isTrialOrExpired ? "saffron" : "outline"} 
-              size="sm" 
+              size="sm"
+              className="shrink-0 text-xs px-3"
               onClick={() => navigate('/pricing')}
             >
               {isTrialOrExpired ? 'Upgrade' : 'Manage'}
