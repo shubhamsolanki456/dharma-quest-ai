@@ -2,35 +2,60 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Star, Users } from 'lucide-react';
-import { OmIcon } from '@/components/OmIcon';
+import { Users } from 'lucide-react';
+import { OmIconNew, ShastraIcon, RobotIcon, MapsIcon, EyeIcon, StarFullIcon } from '@/components/icons';
+
+// Slides with icon mapping
 const slides = [
   {
     title: "Daily Wisdom",
-    description: "700 Bhagavad Gita shlokas with deep explanations"
+    description: "700 Bhagavad Gita shlokas with deep explanations",
+    iconType: "shastra"
   },
   {
     title: "AI Scripture Guide", 
-    description: "Ask any question, receive authentic Hindu wisdom"
+    description: "Ask any question, receive authentic Hindu wisdom",
+    iconType: "robot"
   },
   {
     title: "Streak Tracking",
-    description: "Build dharmic habits with gamified progress"
+    description: "Build dharmic habits with gamified progress",
+    iconType: "maps"
   },
   {
     title: "Sin Tracking",
-    description: "Overcome bad habits and grow spiritually"
+    description: "Overcome bad habits and grow spiritually",
+    iconType: "eye"
   },
   {
     title: "Dharma Points",
-    description: "Level up your spiritual journey"
+    description: "Level up your spiritual journey",
+    iconType: "star"
   }
 ];
 
 interface SlideItem {
   title: string;
   description: string;
+  iconType: string;
 }
+
+const SlideIcon = ({ iconType }: { iconType: string }) => {
+  switch (iconType) {
+    case "shastra":
+      return <ShastraIcon className="w-7 h-7" />;
+    case "robot":
+      return <RobotIcon className="w-7 h-7 text-primary-foreground" />;
+    case "maps":
+      return <MapsIcon className="w-7 h-7" />;
+    case "eye":
+      return <EyeIcon className="w-7 h-7 text-primary-foreground" />;
+    case "star":
+      return <StarFullIcon className="w-7 h-7 text-primary-foreground" />;
+    default:
+      return <OmIconNew className="w-7 h-7" />;
+  }
+};
 
 const DotsIndicator = ({ 
   totalSlides, 
@@ -79,7 +104,7 @@ const Landing = () => {
       <div className="py-4 flex justify-between items-center">
         <div className="flex items-center">
           <div className="bg-gradient-saffron p-2.5 rounded-full mr-2 flex items-center justify-center">
-            <OmIcon className="w-5 h-5 text-primary-foreground" />
+            <OmIconNew className="w-5 h-5" />
           </div>
           <h1 className="text-xl font-display text-gradient-saffron">
             Dharma AI
@@ -146,7 +171,7 @@ const Landing = () => {
               >
                 <div className="bg-gradient-to-br from-saffron/20 to-dharma/20 border border-saffron/30 rounded-2xl p-8 w-full max-w-sm text-center">
                   <div className="bg-gradient-saffron p-4 rounded-full w-fit mx-auto mb-4 flex items-center justify-center">
-                    <OmIcon className="w-7 h-7 text-primary-foreground" />
+                    <SlideIcon iconType={slides[currentIndex].iconType} />
                   </div>
                   <h3 className="text-xl font-display mb-2">{slides[currentIndex].title}</h3>
                   <p className="text-muted-foreground text-sm">{slides[currentIndex].description}</p>
@@ -191,7 +216,7 @@ const Landing = () => {
                 <h3 className="text-2xl font-display text-saffron">
                   4.9
                 </h3>
-                <Star className="h-4 w-4 fill-yellow-500 text-yellow-500" />
+                <StarFullIcon className="h-4 w-4 text-yellow-500" />
               </div>
             </div>
           </div>

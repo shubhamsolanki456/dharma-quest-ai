@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, BookOpen, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import lotusIcon from '@/assets/lotus-icon.png';
+import { RobotIcon } from '@/components/icons';
 
 interface Message {
   id: number;
@@ -177,10 +177,12 @@ const AIGuide = () => {
   return (
     <MobileLayout currentPage="/ai-guide">
       <div className="flex flex-col h-[calc(100vh-6rem)]">
-        {/* Header */}
+        {/* Header - Orange container with robot icon */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <img src={lotusIcon} alt="AI Guide" className="h-8 w-8" />
+            <div className="bg-gradient-saffron p-2.5 rounded-xl flex items-center justify-center">
+              <RobotIcon className="h-6 w-6 text-primary-foreground" />
+            </div>
             <div>
               <h1 className="text-lg font-semibold">AI Spiritual Guide</h1>
               <p className="text-sm text-muted-foreground">Wisdom from sacred texts</p>

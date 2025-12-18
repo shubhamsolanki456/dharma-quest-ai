@@ -5,8 +5,8 @@ import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
-import { ArrowRight, ArrowLeft, CheckCircle, Flower2, Sun, Heart, BookOpen, Zap } from 'lucide-react';
-import { OmIcon } from '@/components/OmIcon';
+import { ArrowRight, ArrowLeft, CheckCircle, Sun, Heart, BookOpen, Zap } from 'lucide-react';
+import { OmIconNew } from '@/components/icons';
 
 interface Question {
   id: string;
@@ -76,7 +76,7 @@ const introSteps = [
     content: (
       <div className="text-center space-y-6">
         <div className="bg-gradient-saffron p-6 rounded-full w-fit mx-auto animate-float">
-          <OmIcon className="w-10 h-10 text-primary-foreground" />
+          <OmIconNew className="w-10 h-10" />
         </div>
         <p className="text-lg text-muted-foreground">
           Your AI-powered spiritual companion for authentic Hindu wisdom, 
@@ -162,7 +162,7 @@ const Onboarding = () => {
 
     // If user has completed onboarding and has active access, go to dashboard
     if (subscription?.has_completed_onboarding) {
-      navigate('/dashboard');
+      navigate('/start-free-trial');
     }
   }, [user, subscription, authLoading, subLoading, navigate]);
 

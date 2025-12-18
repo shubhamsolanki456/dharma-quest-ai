@@ -1,7 +1,7 @@
-import { Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import { useHaptics } from '@/hooks/useHaptics';
-import { OmIcon } from '@/components/OmIcon';
+import { OmIconNew } from '@/components/icons';
 
 interface StreakCard3DProps {
   appStreak: number;
@@ -42,7 +42,7 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
         {/* Header with icon thumbnail */}
         <div className="flex items-start gap-3">
           <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-amber-300 via-orange-400 to-orange-500 flex items-center justify-center shadow-md border-2 border-white/30">
-            <OmIcon className="w-7 h-7 text-white" />
+            <OmIconNew className="w-7 h-7" />
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-display text-white drop-shadow-md">Spiritual Journey</h3>
@@ -50,44 +50,40 @@ export const StreakCard3D = ({ appStreak, sinFreeStreak }: StreakCard3DProps) =>
           </div>
         </div>
         
-        {/* Stats rows */}
-        <div className="space-y-2">
-          {/* App Streak row */}
-          <div className="flex items-baseline gap-3">
-            <span className="text-white/80 text-sm w-20 font-display">App Streak</span>
-            <span className="text-white font-bold font-sans">{appStreak} {appStreak === 1 ? 'day' : 'days'}</span>
-          </div>
-          
-          {/* Sin-Free Streak row */}
-          <div className="flex items-baseline gap-3">
-            <span className="text-white/80 text-sm w-20 font-display">Sin-Free</span>
-            <span className="text-white font-bold font-sans">{sinFreeStreak} {sinFreeStreak === 1 ? 'day' : 'days'}</span>
-          </div>
-          
-          {/* Dedication row with stars */}
-          <div className="flex items-center gap-4">
-            <span className="text-white/80 text-sm w-20 font-display">Dedication</span>
-            <div className="flex gap-0.5 items-center">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star 
-                  key={star} 
-                  className={`h-4 w-4 transition-all ${
-                    star <= totalDedication 
-                      ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.5)]' 
-                      : 'text-white/40 fill-white/10'
-                  }`}
-                />
-              ))}
-              {showProgress && (
-                <span className="text-white/60 text-xs ml-2">({appStreak}/7 days)</span>
-              )}
-            </div>
-          </div>
+        {/* Dedication Stars */}
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Star 
+              key={i} 
+              className={`w-5 h-5 transition-all duration-300 ${
+                i < totalDedication 
+                  ? 'text-yellow-400 fill-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.8)]' 
+                  : showProgress && i === 0 
+                    ? 'text-yellow-400/50 fill-yellow-400/30' 
+                    : 'text-white/30 fill-white/10'
+              }`}
+            />
+          ))}
+          <span className="ml-2 text-white/80 text-sm font-sans">
+            {totalDedication > 0 
+              ? `${totalDedication}/5 Dedication`
+              : showProgress 
+                ? `${appStreak}/7 days to first star`
+                : 'Start your journey'
+            }
+          </span>
         </div>
         
-        {/* Motivational quote */}
-        <div className="flex items-center justify-center pt-3 border-t border-white/20">
-          <span className="text-white/80 text-sm font-sans italic text-center">"Tap to manage your sin-free journey"</span>
+        {/* Streak Stats Row */}
+        <div className="flex gap-4 pt-2">
+          <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+            <p className="text-white/70 text-xs font-sans mb-1">App Streak</p>
+            <p className="text-2xl font-display text-white">{appStreak} <span className="text-base text-white/70">days</span></p>
+          </div>
+          <div className="flex-1 bg-black/30 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+            <p className="text-white/70 text-xs font-sans mb-1">Sin-Free Journey</p>
+            <p className="text-2xl font-display text-white">{sinFreeStreak} <span className="text-base text-white/70">days</span></p>
+          </div>
         </div>
       </div>
     </div>
