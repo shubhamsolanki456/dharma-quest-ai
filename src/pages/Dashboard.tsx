@@ -141,6 +141,19 @@ const Dashboard = () => {
     }
   }, [fetchCompletedQuests, user, updateStreak]);
 
+  // Check trial expiry and redirect to pricing if expired
+  useEffect(() => {
+    if (!subscription) return;
+    
+    if (subscription.plan_type === 'trial' && subscription.trial_end_date) {
+      const isExpired = new Date(subscription.trial_end_date) < new Date();
+      if (isExpired) {
+        // Redirect to pricing/paywall
+        navigate('/pricing');
+      }
+    }
+  }, [subscription, navigate]);
+
   // Sync displayedDP with profile
   useEffect(() => {
     setDisplayedDP(totalDP);

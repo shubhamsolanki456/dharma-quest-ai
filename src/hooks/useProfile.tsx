@@ -15,6 +15,14 @@ export interface UserProfile {
   last_activity_date: string | null;
   created_at: string;
   updated_at: string;
+  // Onboarding data fields
+  spirituality_level: string | null;
+  meditation_experience: string | null;
+  daily_routine: string | null;
+  goals: string | null;
+  preferred_practices: string | null;
+  wake_up_time: string | null;
+  practice_duration: string | null;
 }
 
 // Cache profile data across components

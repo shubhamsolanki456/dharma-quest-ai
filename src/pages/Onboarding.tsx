@@ -5,8 +5,10 @@ import { Progress } from '@/components/ui/progress';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useProfile } from '@/hooks/useProfile';
 import { ArrowRight, ArrowLeft, CheckCircle, Sun, Heart, BookOpen, Zap } from 'lucide-react';
 import { OmIconNew } from '@/components/icons';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Question {
   id: string;
@@ -146,6 +148,7 @@ const Onboarding = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { subscription, createTrialSubscription, completeOnboarding, loading: subLoading } = useSubscription();
+  const { profile, loading: profileLoading, refetch: refetchProfile } = useProfile();
 
   const totalSteps = introSteps.length + spiritualQuestions.length;
   const isIntroPhase = currentStep < introSteps.length;
@@ -153,24 +156,43 @@ const Onboarding = () => {
 
   // Redirect if no user or already completed onboarding
   useEffect(() => {
-    if (authLoading || subLoading) return;
+    if (authLoading || subLoading || profileLoading) return;
     
     if (!user) {
       navigate('/auth');
       return;
     }
 
-    // If user has completed onboarding and has active access, go to dashboard
+    // If user has completed onboarding, go to start-free-trial
     if (subscription?.has_completed_onboarding) {
       navigate('/start-free-trial');
     }
-  }, [user, subscription, authLoading, subLoading, navigate]);
+  }, [user, subscription, authLoading, subLoading, profileLoading, navigate]);
 
   const handleComplete = async () => {
+    if (!user) return;
     setIsCompleting(true);
     
     try {
-      // Save onboarding answers
+      // Save onboarding answers to profiles table
+      const onboardingData = {
+        spirituality_level: answers.experience as string || null,
+        goals: Array.isArray(answers.goal) ? answers.goal.join(',') : (answers.goal as string) || null,
+        preferred_practices: Array.isArray(answers.practice) ? answers.practice.join(',') : null,
+        daily_routine: answers.time as string || null,
+        practice_duration: answers.duration as string || null,
+      };
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update(onboardingData)
+        .eq('user_id', user.id);
+
+      if (profileError) {
+        console.error('Error saving onboarding data:', profileError);
+      }
+
+      // Also save to localStorage as backup
       localStorage.setItem('onboardingAnswers', JSON.stringify(answers));
       
       // Create trial subscription if doesn't exist
@@ -180,6 +202,9 @@ const Onboarding = () => {
       
       // Mark onboarding as complete
       await completeOnboarding();
+      
+      // Refetch profile to get updated data
+      refetchProfile();
       
       // Navigate to start free trial page
       navigate('/start-free-trial');
@@ -237,7 +262,7 @@ const Onboarding = () => {
 
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
-  if (authLoading || subLoading) {
+  if (authLoading || subLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
