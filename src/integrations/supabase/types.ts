@@ -297,42 +297,63 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           current_level: number
+          daily_routine: string | null
           dharma_points: number
           email: string | null
           full_name: string | null
+          goals: string | null
           id: string
           last_activity_date: string | null
+          meditation_experience: string | null
+          practice_duration: string | null
+          preferred_practices: string | null
           sin_free_streak: number
+          spirituality_level: string | null
           updated_at: string
           user_id: string
+          wake_up_time: string | null
         }
         Insert: {
           app_streak?: number
           avatar_url?: string | null
           created_at?: string
           current_level?: number
+          daily_routine?: string | null
           dharma_points?: number
           email?: string | null
           full_name?: string | null
+          goals?: string | null
           id?: string
           last_activity_date?: string | null
+          meditation_experience?: string | null
+          practice_duration?: string | null
+          preferred_practices?: string | null
           sin_free_streak?: number
+          spirituality_level?: string | null
           updated_at?: string
           user_id: string
+          wake_up_time?: string | null
         }
         Update: {
           app_streak?: number
           avatar_url?: string | null
           created_at?: string
           current_level?: number
+          daily_routine?: string | null
           dharma_points?: number
           email?: string | null
           full_name?: string | null
+          goals?: string | null
           id?: string
           last_activity_date?: string | null
+          meditation_experience?: string | null
+          practice_duration?: string | null
+          preferred_practices?: string | null
           sin_free_streak?: number
+          spirituality_level?: string | null
           updated_at?: string
           user_id?: string
+          wake_up_time?: string | null
         }
         Relationships: []
       }

@@ -12,9 +12,16 @@ const PUBLIC_ROUTES = ['/', '/landing', '/auth', '/privacy-policy', '/terms-of-s
 // Routes that require auth but not active subscription
 const AUTH_ONLY_ROUTES = ['/onboarding', '/start-free-trial', '/start-trial', '/pricing', '/payment-success'];
 
+// Helper function to check if trial has expired
+const isTrialExpired = (subscription: any): boolean => {
+  if (!subscription?.trial_end_date) return false;
+  if (subscription.plan_type !== 'trial') return false;
+  return new Date(subscription.trial_end_date) < new Date();
+};
+
 export const PaywallGuard = ({ children }: PaywallGuardProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { subscription, loading: subLoading, hasActiveAccess } = useSubscription();
+  const { subscription, loading: subLoading, hasActiveAccess, isSubscriptionExpired } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -24,7 +31,7 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
     const isPublicRoute = PUBLIC_ROUTES.includes(location.pathname);
     const isAuthOnlyRoute = AUTH_ONLY_ROUTES.includes(location.pathname);
     
-    // Not logged in - redirect to landing for protected routes
+    // SCENARIO 1: Not logged in → Allow public routes, redirect others to landing
     if (!user) {
       if (!isPublicRoute) {
         navigate('/');
@@ -32,55 +39,52 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
       return;
     }
 
-    // User is logged in
-    if (user) {
-      // No subscription record yet - they need to complete onboarding first
-      if (!subscription) {
-        if (!isPublicRoute && !isAuthOnlyRoute && location.pathname !== '/onboarding') {
-          navigate('/onboarding');
-        }
-        return;
+    // User is logged in from here on
+    
+    // SCENARIO 2: Logged in but no subscription record → Go to Onboarding
+    if (!subscription) {
+      if (!isPublicRoute && !isAuthOnlyRoute && location.pathname !== '/onboarding') {
+        navigate('/onboarding');
       }
+      return;
+    }
 
-      // Has subscription record but hasn't completed onboarding
-      if (!subscription.has_completed_onboarding) {
-        if (location.pathname !== '/onboarding' && !isPublicRoute) {
-          navigate('/onboarding');
-        }
-        return;
+    // SCENARIO 3: Logged in, has subscription but NOT completed onboarding → Go to Onboarding
+    if (!subscription.has_completed_onboarding) {
+      if (location.pathname !== '/onboarding' && !isPublicRoute) {
+        navigate('/onboarding');
       }
+      return;
+    }
 
-      // Completed onboarding - check if trial was explicitly activated
-      const trialActivated = localStorage.getItem('trial_activated') === 'true';
-      
-      if (!trialActivated) {
-        // Hasn't activated trial yet - must go to start-free-trial page
-        if (!isPublicRoute && !isAuthOnlyRoute) {
-          navigate('/start-free-trial');
-        }
-        return;
+    // SCENARIO 4: Completed onboarding but hasn't activated free trial → Go to Activate Trial
+    const trialActivated = localStorage.getItem('trial_activated') === 'true';
+    if (!trialActivated) {
+      if (!isPublicRoute && !isAuthOnlyRoute) {
+        navigate('/start-free-trial');
       }
+      return;
+    }
 
-      // Trial activated - check if it's still active
-      if (!hasActiveAccess()) {
-        // Trial/subscription expired - PAYWALL ENFORCED
-        // Redirect to pricing from any protected route
-        if (!isPublicRoute && !isAuthOnlyRoute) {
-          navigate('/pricing');
-        }
-        return;
+    // SCENARIO 5: Has trial/premium but trial has EXPIRED → Go to Pricing/Paywall
+    if (isTrialExpired(subscription) || isSubscriptionExpired()) {
+      if (!isPublicRoute && !isAuthOnlyRoute) {
+        navigate('/pricing');
       }
+      return;
+    }
 
-      // User has active access - redirect away from onboarding/trial routes to dashboard
-      if (hasActiveAccess() && trialActivated) {
-        if (location.pathname === '/onboarding' || 
-            location.pathname === '/start-free-trial' || 
-            location.pathname === '/start-trial') {
-          navigate('/dashboard');
-        }
+    // SCENARIO 6: Everything is good (completed onboarding + active trial/premium)
+    // Auto-redirect from auth-only routes to dashboard
+    if (hasActiveAccess() && trialActivated) {
+      if (location.pathname === '/onboarding' || 
+          location.pathname === '/start-free-trial' || 
+          location.pathname === '/start-trial' ||
+          location.pathname === '/') {
+        navigate('/dashboard');
       }
     }
-  }, [user, subscription, authLoading, subLoading, location.pathname, navigate, hasActiveAccess]);
+  }, [user, subscription, authLoading, subLoading, location.pathname, navigate, hasActiveAccess, isSubscriptionExpired]);
 
   if (authLoading || subLoading) {
     return (
