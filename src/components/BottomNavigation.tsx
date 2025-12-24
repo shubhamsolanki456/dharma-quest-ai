@@ -36,7 +36,7 @@ export const BottomNavigation = memo(({ currentPage }: BottomNavigationProps) =>
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className="fixed bottom-0 left-0 right-0 flex justify-center safe-bottom z-50"
       >
-        <div className="w-[360px] translate-x-2 bg-card border-t border-border rounded-t-2xl">
+        <div className="w-[360px] -translate-x-1 bg-card border-t border-border rounded-t-2xl">
         <div className="flex items-center justify-around px-1 py-2.5">
           {navItems.map(({ icon: Icon, label, path }) => {
             const isActive = location.pathname === path;
