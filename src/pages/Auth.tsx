@@ -42,8 +42,14 @@ const Auth = () => {
   // Redirect if already authenticated - check subscription status
   useEffect(() => {
     if (!loading && user) {
-      // After auth, redirect to onboarding to handle subscription flow
-      navigate('/onboarding');
+      // Check if user has already activated trial - go directly to dashboard
+      const trialActivated = localStorage.getItem('trial_activated') === 'true';
+      if (trialActivated) {
+        window.location.href = '/dashboard';
+      } else {
+        // New user or hasn't completed onboarding - go through onboarding flow
+        navigate('/onboarding');
+      }
     }
   }, [user, loading, navigate]);
 
