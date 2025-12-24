@@ -21,7 +21,7 @@ const StartFreeTrial = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Redirect checks
+  // Redirect checks - only redirect if definitely not authenticated
   useEffect(() => {
     if (authLoading || subLoading) return;
     
@@ -29,16 +29,10 @@ const StartFreeTrial = () => {
       navigate('/auth');
       return;
     }
-
-    // If no subscription or hasn't completed onboarding, go to onboarding
-    if (!subscription || !subscription.has_completed_onboarding) {
-      navigate('/onboarding');
-      return;
-    }
-
-    // If already has active access and completed trial start, go to dashboard
-    // This check will be handled by handleStartTrial
-  }, [user, subscription, authLoading, subLoading, navigate, hasActiveAccess]);
+    
+    // Don't redirect back to onboarding - if we got here, onboarding is done
+    // The PaywallGuard handles the overall routing logic
+  }, [user, authLoading, subLoading, navigate]);
 
   const handleStartTrial = async () => {
     setIsStarting(true);
@@ -48,7 +42,8 @@ const StartFreeTrial = () => {
     sessionStorage.setItem('showDashboardConfetti', 'true');
     // Small delay for animation feel
     await new Promise(resolve => setTimeout(resolve, 800));
-    navigate('/dashboard');
+    // Use hard navigation to ensure clean state
+    window.location.href = '/dashboard';
   };
 
   const features = [

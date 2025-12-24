@@ -13,7 +13,7 @@ const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscription, subscribeToPlan, hasActiveAccess, getDaysRemaining } = useSubscription();
+  const { subscription, subscribeToPlan, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
 
   const plans = [
     {
@@ -93,8 +93,10 @@ const Pricing = () => {
       const success = await subscribeToPlan(planId as 'weekly' | 'monthly' | 'yearly');
 
       if (success) {
-        // Navigate to payment success page with confetti
-        navigate(`/payment-success?plan=${planId}`);
+        // Refresh subscription state before navigation
+        await refetch();
+        // Use hard navigation to ensure clean state
+        window.location.href = `/payment-success?plan=${planId}`;
       } else {
         toast.error('Payment failed. Please try again.');
       }

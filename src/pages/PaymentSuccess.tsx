@@ -5,6 +5,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Crown, ArrowRight, Sparkles } from 'lucide-react';
 import { Confetti } from '@/components/Confetti';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -12,6 +13,7 @@ const PaymentSuccess = () => {
   const planType = searchParams.get('plan') || 'monthly';
   const [showContent, setShowContent] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
+  const { refetch } = useSubscription();
 
   const planNames: Record<string, string> = {
     weekly: 'Weekly',
@@ -23,12 +25,20 @@ const PaymentSuccess = () => {
     // Mark trial as activated (user now has premium)
     localStorage.setItem('trial_activated', 'true');
     
+    // Refresh subscription state
+    refetch();
+    
     // Show content after a small delay
     setTimeout(() => setShowContent(true), 500);
     
     // Hide confetti after animation
     setTimeout(() => setShowConfetti(false), 5000);
-  }, []);
+  }, [refetch]);
+
+  const handleContinue = () => {
+    // Use hard navigation to ensure clean state
+    window.location.href = '/dashboard';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4 relative overflow-hidden">
@@ -134,7 +144,7 @@ const PaymentSuccess = () => {
               <Button
                 variant="saffron"
                 className="w-full h-14 rounded-full text-lg font-display shadow-lg shadow-saffron/30"
-                onClick={() => navigate('/dashboard')}
+                onClick={handleContinue}
               >
                 Start Your Journey
                 <ArrowRight className="h-5 w-5 ml-2" />

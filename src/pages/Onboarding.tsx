@@ -203,14 +203,10 @@ const Onboarding = () => {
       // Mark onboarding as complete
       await completeOnboarding();
       
-      // Refetch profile to get updated data
-      refetchProfile();
-      
-      // Navigate to start free trial page
-      navigate('/start-free-trial');
+      // Use hard navigation to ensure all hooks re-initialize with fresh state
+      window.location.href = '/start-free-trial';
     } catch (error) {
       console.error('Error completing onboarding:', error);
-    } finally {
       setIsCompleting(false);
     }
   };
