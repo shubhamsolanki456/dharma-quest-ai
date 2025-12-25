@@ -76,7 +76,7 @@ export const useSubscription = () => {
   };
 
   const completeOnboarding = async () => {
-    if (!user || !subscription) return;
+    if (!user) return;
 
     try {
       const { error } = await supabase
@@ -85,7 +85,7 @@ export const useSubscription = () => {
         .eq('user_id', user.id);
 
       if (error) throw error;
-      setSubscription(prev => prev ? { ...prev, has_completed_onboarding: true } : null);
+      setSubscription(prev => (prev ? { ...prev, has_completed_onboarding: true } : prev));
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }

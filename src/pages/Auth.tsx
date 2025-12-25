@@ -7,10 +7,12 @@ import { Input } from '@/components/ui/input';
 import { ArrowLeft, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const Auth = () => {
   const navigate = useNavigate();
   const { signIn, signUp, user, loading } = useAuth();
+  const { subscription, loading: subLoading } = useSubscription();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -39,19 +41,23 @@ const Auth = () => {
     return () => unsubscribe.stop();
   }, []);
 
-  // Redirect if already authenticated - check subscription status
+  // Redirect if already authenticated - check onboarding + trial activation
   useEffect(() => {
-    if (!loading && user) {
-      // Check if user has already activated trial - go directly to dashboard
-      const trialActivated = localStorage.getItem('trial_activated') === 'true';
-      if (trialActivated) {
-        window.location.href = '/dashboard';
-      } else {
-        // New user or hasn't completed onboarding - go through onboarding flow
-        navigate('/onboarding');
-      }
+    if (loading || subLoading || !user) return;
+
+    const trialActivated = localStorage.getItem('trial_activated') === 'true';
+    if (trialActivated) {
+      window.location.href = '/dashboard';
+      return;
     }
-  }, [user, loading, navigate]);
+
+    if (subscription?.has_completed_onboarding) {
+      navigate('/start-free-trial');
+      return;
+    }
+
+    navigate('/onboarding');
+  }, [user, loading, subLoading, subscription?.has_completed_onboarding, navigate]);
 
   const handleLogin = async () => {
     if (!email || !email.includes('@')) {
