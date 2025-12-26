@@ -70,40 +70,52 @@ const TermsOfService = () => {
             <ul className="list-disc pl-6 space-y-1">
               <li>Pay all applicable fees for the chosen plan</li>
               <li>Automatic renewal unless cancelled before the renewal date</li>
-              <li>Refund policies as outlined in the subscription terms</li>
             </ul>
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">6. Intellectual Property</h2>
+            <h2 className="text-lg font-display text-foreground">6. Cancellation & Refund Policy</h2>
+            <p>
+              You may cancel your subscription at any time through the Profile section of the app. Please note the following:
+            </p>
+            <ul className="list-disc pl-6 space-y-1">
+              <li><strong>No Refunds:</strong> All payments are final and non-refundable. Once a payment is made, no refunds will be issued under any circumstances.</li>
+              <li><strong>Cancellation Effect:</strong> If you cancel your subscription, you will continue to have access to premium features until the end of your current billing period.</li>
+              <li><strong>Post-Cancellation:</strong> After your current subscription period ends, your account will automatically downgrade to the free plan with limited features.</li>
+              <li><strong>No Partial Refunds:</strong> Cancelling mid-cycle does not entitle you to a refund for the unused portion of your subscription.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-display text-foreground">7. Intellectual Property</h2>
             <p>
               All content, features, and functionality of Dharma AI are owned by us and protected by copyright, trademark, and other intellectual property laws. The spiritual scriptures and traditional texts quoted are attributed to their original sources.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">7. Disclaimer</h2>
+            <h2 className="text-lg font-display text-foreground">8. Disclaimer</h2>
             <p>
               Dharma AI provides spiritual guidance for educational and self-improvement purposes only. We are not a substitute for professional medical, psychological, or religious advice. Always consult qualified professionals for specific concerns.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">8. Limitation of Liability</h2>
+            <h2 className="text-lg font-display text-foreground">9. Limitation of Liability</h2>
             <p>
               To the maximum extent permitted by law, Dharma AI shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the app.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">9. Changes to Terms</h2>
+            <h2 className="text-lg font-display text-foreground">10. Changes to Terms</h2>
             <p>
               We reserve the right to modify these terms at any time. We will notify users of significant changes through the app or via email.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">10. Contact</h2>
+            <h2 className="text-lg font-display text-foreground">11. Contact</h2>
             <p>
               For questions about these Terms, contact us at:
             </p>

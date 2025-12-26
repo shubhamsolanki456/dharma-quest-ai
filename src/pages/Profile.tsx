@@ -11,10 +11,16 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { 
+  AlertDialog, AlertDialogAction, AlertDialogCancel, 
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter, 
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger 
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { 
   User, Crown, Star, Target, Calendar, Settings, LogOut, 
-  Flame, BookOpen, Heart, Clock, Trophy, TrendingUp 
+  Flame, BookOpen, Heart, Clock, Trophy, TrendingUp, XCircle 
 } from "lucide-react";
 
 interface Stats {
@@ -27,8 +33,9 @@ interface Stats {
 const Profile = () => {
   const { user, signOut, loading } = useAuth();
   const { profile } = useProfile();
-  const { subscription, hasActiveAccess, getDaysRemaining } = useSubscription();
+  const { subscription, hasActiveAccess, getDaysRemaining, cancelSubscription, isCancelled } = useSubscription();
   const navigate = useNavigate();
+  const [isCancelling, setIsCancelling] = useState(false);
   const [stats, setStats] = useState<Stats>({
     totalMeditations: 0,
     totalJournalEntries: 0,
@@ -68,6 +75,26 @@ const Profile = () => {
     await signOut();
     navigate('/');
   };
+
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    const success = await cancelSubscription();
+    setIsCancelling(false);
+    
+    if (success) {
+      toast.success("Subscription cancelled", {
+        description: "Your subscription will remain active until the end of your current billing period."
+      });
+    } else {
+      toast.error("Failed to cancel subscription", {
+        description: "Please try again or contact support."
+      });
+    }
+  };
+
+  const canCancelSubscription = subscription && 
+    subscription.plan_type !== 'trial' && 
+    subscription.is_active;
 
   const achievements = [
     { 
@@ -157,13 +184,17 @@ const Profile = () => {
                     className={`${
                       subscription.plan_type === 'trial' 
                         ? 'bg-green-500/20 text-green-500' 
-                        : 'bg-saffron/20 text-saffron'
+                        : isCancelled()
+                          ? 'bg-destructive/20 text-destructive'
+                          : 'bg-saffron/20 text-saffron'
                     } border-0`}
                   >
                     <Clock className="h-3 w-3 mr-1" />
                     {subscription.plan_type === 'trial' 
                       ? `Trial • ${getDaysRemaining()} days` 
-                      : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`
+                      : isCancelled()
+                        ? `Ends in ${getDaysRemaining()} days`
+                        : `${subscription.plan_type.charAt(0).toUpperCase() + subscription.plan_type.slice(1)} Plan`
                     }
                   </Badge>
                 )}
@@ -333,6 +364,49 @@ const Profile = () => {
             <Settings className="h-5 w-5 mr-3" />
             Settings
           </Button>
+          
+          {canCancelSubscription && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-start rounded-xl h-12 text-amber-600 border-amber-600/30 hover:bg-amber-600/10 hover:text-amber-600" 
+                >
+                  <XCircle className="h-5 w-5 mr-3" />
+                  Cancel Subscription
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="mx-4 rounded-2xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel Subscription?</AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    <p>Are you sure you want to cancel your subscription?</p>
+                    <p>Your subscription will remain active until <strong>{new Date(subscription?.subscription_end_date || '').toLocaleDateString()}</strong>. After that, you'll be downgraded to the free plan.</p>
+                    <p className="text-xs text-muted-foreground mt-2">Note: No refunds will be issued for the remaining period.</p>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-xl">Keep Subscription</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={handleCancelSubscription}
+                    disabled={isCancelling}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl"
+                  >
+                    {isCancelling ? "Cancelling..." : "Yes, Cancel"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {isCancelled() && (
+            <Card className="p-4 rounded-xl border-amber-600/30 bg-amber-600/10">
+              <p className="text-sm text-amber-600">
+                Your subscription has been cancelled and will end on {new Date(subscription?.subscription_end_date || '').toLocaleDateString()}. 
+                You'll continue to have access until then.
+              </p>
+            </Card>
+          )}
           
           <Button 
             variant="outline" 
