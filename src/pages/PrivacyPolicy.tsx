@@ -73,25 +73,14 @@ const PrivacyPolicy = () => {
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">6. Your Rights</h2>
-            <p>You have the right to:</p>
-            <ul className="list-disc pl-6 space-y-1">
-              <li>Access your personal data</li>
-              <li>Request deletion of your data</li>
-              <li>Export your data</li>
-              <li>Opt out of notifications</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2 className="text-lg font-display text-foreground">7. Children's Privacy</h2>
+            <h2 className="text-lg font-display text-foreground">6. Children's Privacy</h2>
             <p>
               Our app is not intended for children under 13. We do not knowingly collect personal information from children under 13 years of age.
             </p>
           </section>
 
           <section>
-            <h2 className="text-lg font-display text-foreground">8. Contact Us</h2>
+            <h2 className="text-lg font-display text-foreground">7. Contact Us</h2>
             <p>
               If you have questions about this Privacy Policy, please contact us at:
             </p>
