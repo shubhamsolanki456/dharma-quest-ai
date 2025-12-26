@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { DebugTimeSkip } from "@/components/DebugTimeSkip";
 import { PaywallGuard } from "@/components/PaywallGuard";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -74,8 +73,6 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PaywallGuard>
-          {/* Debug time skip button - remove in production */}
-          <DebugTimeSkip />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
