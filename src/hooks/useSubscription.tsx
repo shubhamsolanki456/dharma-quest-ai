@@ -166,16 +166,47 @@ export const useSubscription = () => {
     return Math.max(0, diffDays);
   };
 
+  const cancelSubscription = async (): Promise<boolean> => {
+    if (!user || !subscription) return false;
+    
+    // Only allow cancellation for paid plans, not trial
+    if (subscription.plan_type === 'trial') return false;
+
+    try {
+      // Set is_active to false - subscription continues until end date, then no renewal
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({ is_active: false })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      setSubscription(prev => prev ? { ...prev, is_active: false } : prev);
+      return true;
+    } catch (error) {
+      console.error('Error cancelling subscription:', error);
+      return false;
+    }
+  };
+
+  const isCancelled = (): boolean => {
+    if (!subscription) return false;
+    if (subscription.plan_type === 'trial') return false;
+    return !subscription.is_active;
+  };
+
   return {
     subscription,
     loading,
     createTrialSubscription,
     completeOnboarding,
     subscribeToPlan,
+    cancelSubscription,
     isTrialExpired,
     isSubscriptionExpired,
     hasActiveAccess,
     getDaysRemaining,
+    isCancelled,
     refetch: fetchSubscription
   };
 };
