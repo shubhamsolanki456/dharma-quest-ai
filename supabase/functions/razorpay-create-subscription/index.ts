@@ -9,9 +9,9 @@ const corsHeaders = {
 // Razorpay plan IDs - these should be created in Razorpay Dashboard
 // You'll need to create these plans in Razorpay and update these IDs
 const RAZORPAY_PLANS: Record<string, { plan_id: string; amount: number }> = {
-  weekly: { plan_id: "plan_weekly", amount: 9900 }, // ₹99 in paise
-  monthly: { plan_id: "plan_monthly", amount: 19900 }, // ₹199 in paise
-  yearly: { plan_id: "plan_yearly", amount: 199900 }, // ₹1999 in paise
+  weekly: { plan_id: "plan_RwjapeZbxoyVMQ", amount: 9900 }, // ₹99 in paise
+  monthly: { plan_id: "plan_RwjcY0BC3l7xiH", amount: 19900 }, // ₹199 in paise
+  yearly: { plan_id: "plan_RwjeABJvraSqIX", amount: 199900 }, // ₹1999 in paise
 };
 
 interface CreateSubscriptionRequest {
