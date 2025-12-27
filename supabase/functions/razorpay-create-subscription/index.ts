@@ -14,6 +14,31 @@ const RAZORPAY_PLANS: Record<string, { plan_id: string; amount: number }> = {
   yearly: { plan_id: "plan_RwjeABJvraSqIX", amount: 199900 }, // ₹1999 in paise
 };
 
+// Helper function to get a valid customer name for Razorpay (min 4 chars, must contain letters)
+const getValidCustomerName = (user: { email?: string; user_metadata?: { full_name?: string; name?: string } }): string => {
+  // Try to get name from user metadata first
+  const metadataName = user.user_metadata?.full_name || user.user_metadata?.name;
+  if (metadataName && metadataName.length >= 4 && /[a-zA-Z]/.test(metadataName)) {
+    return metadataName.trim();
+  }
+  
+  // Try email prefix
+  const emailPrefix = user.email?.split("@")[0] || "";
+  // Clean the prefix - keep only letters and spaces
+  const cleanedPrefix = emailPrefix.replace(/[^a-zA-Z\s]/g, '').trim();
+  if (cleanedPrefix.length >= 4) {
+    return cleanedPrefix;
+  }
+  
+  // If cleaned prefix is too short, try padding with the original (for names like "Jo")
+  if (cleanedPrefix.length > 0) {
+    return `${cleanedPrefix} User`;
+  }
+  
+  // Fallback to a valid default name
+  return "Dharma User";
+};
+
 interface CreateSubscriptionRequest {
   plan_type: "weekly" | "monthly" | "yearly";
 }
@@ -79,7 +104,7 @@ serve(async (req: Request) => {
           Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
         },
         body: JSON.stringify({
-          name: user.email?.split("@")[0] || "User",
+          name: getValidCustomerName(user),
           email: user.email,
           fail_existing: "0", // Return existing customer if email exists
         }),
