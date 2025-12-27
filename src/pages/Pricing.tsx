@@ -147,7 +147,7 @@ const Pricing = () => {
         subscription_id: data.subscription_id,
         name: data.name,
         description: data.description,
-        image: '/favicon.ico',
+        image: '/dharma-logo.png',
         handler: async function (response: {
           razorpay_payment_id: string;
           razorpay_subscription_id: string;
