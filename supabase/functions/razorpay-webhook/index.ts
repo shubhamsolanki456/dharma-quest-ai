@@ -25,24 +25,78 @@ function getSubscriptionEndDate(planType: string): Date {
   return endDate;
 }
 
+// Verify Razorpay webhook signature using HMAC SHA-256
+async function verifyWebhookSignature(
+  body: string,
+  signature: string | null,
+  secret: string
+): Promise<boolean> {
+  if (!signature) {
+    console.error("No signature provided in webhook request");
+    return false;
+  }
+
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+
+    const signatureBytes = await crypto.subtle.sign(
+      "HMAC",
+      key,
+      encoder.encode(body)
+    );
+
+    const expectedSignature = Array.from(new Uint8Array(signatureBytes))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
+    const isValid = expectedSignature === signature;
+    console.log("Signature verification result:", isValid ? "valid" : "invalid");
+    return isValid;
+  } catch (err) {
+    console.error("Error verifying signature:", err);
+    return false;
+  }
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET");
+    const RAZORPAY_WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!RAZORPAY_KEY_SECRET) {
-      throw new Error("Razorpay secret not configured");
+    if (!RAZORPAY_WEBHOOK_SECRET) {
+      console.error("RAZORPAY_WEBHOOK_SECRET not configured");
+      throw new Error("Webhook secret not configured");
     }
 
     const body = await req.text();
     const signature = req.headers.get("x-razorpay-signature");
 
     console.log("Received webhook with signature:", signature ? "present" : "missing");
+
+    // Verify signature before processing
+    const isValid = await verifyWebhookSignature(body, signature, RAZORPAY_WEBHOOK_SECRET);
+    if (!isValid) {
+      console.error("Invalid webhook signature – rejecting request");
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        }
+      );
+    }
 
     const event = JSON.parse(body);
     console.log("Received Razorpay webhook event:", event.event);
