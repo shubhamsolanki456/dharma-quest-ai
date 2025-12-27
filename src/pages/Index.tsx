@@ -44,16 +44,16 @@ const Index = () => {
       return;
     }
 
-    // SCENARIO 5: Completed onboarding but hasn't activated free trial → Go to Activate Trial
-    const trialActivated = localStorage.getItem('trial_activated') === 'true';
-    if (!trialActivated) {
-      navigate('/start-free-trial');
+    // SCENARIO 5: Has trial/premium but trial has EXPIRED → Go to Pricing/Paywall (check BEFORE trial activation)
+    if (isTrialExpired(subscription) || isSubscriptionExpired()) {
+      navigate('/pricing');
       return;
     }
 
-    // SCENARIO 6: Has trial/premium but trial has EXPIRED → Go to Pricing/Paywall
-    if (isTrialExpired(subscription) || isSubscriptionExpired()) {
-      navigate('/pricing');
+    // SCENARIO 6: Completed onboarding but hasn't activated free trial → Go to Activate Trial
+    const trialActivated = localStorage.getItem('trial_activated') === 'true';
+    if (!trialActivated) {
+      navigate('/start-free-trial');
       return;
     }
 
