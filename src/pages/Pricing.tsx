@@ -26,6 +26,7 @@ const Pricing = () => {
   const publishedPricingUrl = 'https://dharma-quest-companion.lovable.app/pricing';
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
   const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isInIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
   const isPreviewHost =
     currentHostname === 'localhost' ||
     currentHostname.endsWith('.lovableproject.com') ||
@@ -118,9 +119,11 @@ const Pricing = () => {
       return;
     }
 
-    // Razorpay blocks payments from preview domains; force checkout on published site
-    if (isPreviewHost) {
-      toast.error(`Payments are blocked in preview (${currentHostname}). Opening published site...`);
+    // Razorpay blocks payments when embedded in iframes and on preview domains.
+    // Force checkout to happen on the published site in a real browser tab.
+    if (isInIframe || isPreviewHost) {
+      const why = isInIframe ? 'embedded iframe' : `preview domain (${currentHostname})`;
+      toast.error(`Payments are blocked here (${why}). Opening published site...`);
       window.open(publishedPricingUrl, '_blank', 'noopener,noreferrer');
       return;
     }
@@ -155,6 +158,14 @@ const Pricing = () => {
       }
 
       console.log('Razorpay subscription created:', data);
+
+      const keyMode = typeof data.key_id === 'string' && data.key_id.startsWith('rzp_test') ? 'test' : 'live';
+      console.log('Razorpay checkout diagnostics:', {
+        origin: currentOrigin,
+        hostname: currentHostname,
+        embedded: isInIframe,
+        keyMode,
+      });
 
       // Open Razorpay checkout
       const options = {
@@ -226,7 +237,9 @@ const Pricing = () => {
       razorpay.on('payment.failed', function (response: any) {
         const description = response?.error?.description || 'Unknown error';
         console.error('Payment failed:', response?.error);
-        toast.error(`Payment failed: ${description} (site: ${currentHostname || currentOrigin})`);
+        toast.error(
+          `Payment failed: ${description} (site: ${currentHostname || currentOrigin}, embedded: ${isInIframe ? 'yes' : 'no'}, mode: ${keyMode})`
+        );
         setIsLoading(false);
         setSelectedPlan(null);
       });
