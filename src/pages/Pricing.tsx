@@ -23,6 +23,14 @@ const Pricing = () => {
   const { user } = useAuth();
   const { subscription, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
 
+  const publishedPricingUrl = 'https://dharma-quest-companion.lovable.app/pricing';
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+  const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isPreviewHost =
+    currentHostname === 'localhost' ||
+    currentHostname.endsWith('.lovableproject.com') ||
+    currentHostname.includes('lovableproject.com');
+
   // Load Razorpay script
   useEffect(() => {
     const script = document.createElement('script');
@@ -107,6 +115,13 @@ const Pricing = () => {
   const handlePlanSelect = async (planId: string) => {
     if (!user) {
       navigate('/auth');
+      return;
+    }
+
+    // Razorpay blocks payments from preview domains; force checkout on published site
+    if (isPreviewHost) {
+      toast.error(`Payments are blocked in preview (${currentHostname}). Opening published site...`);
+      window.open(publishedPricingUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 
@@ -209,8 +224,9 @@ const Pricing = () => {
 
       const razorpay = new window.Razorpay(options);
       razorpay.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response.error);
-        toast.error(`Payment failed: ${response.error.description || 'Unknown error'}`);
+        const description = response?.error?.description || 'Unknown error';
+        console.error('Payment failed:', response?.error);
+        toast.error(`Payment failed: ${description} (site: ${currentHostname || currentOrigin})`);
         setIsLoading(false);
         setSelectedPlan(null);
       });
@@ -278,6 +294,28 @@ const Pricing = () => {
             </div>
           )}
         </div>
+
+        {isPreviewHost && (
+          <div className="mb-6 bg-gradient-to-r from-saffron/10 to-dharma/10 border border-saffron/30 rounded-xl p-4 max-w-2xl mx-auto text-center">
+            <p className="text-sm">
+              Payments are blocked on preview domains by Razorpay.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              You are currently on <strong>{currentOrigin}</strong>.
+            </p>
+            <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+              <Button
+                variant="saffron"
+                onClick={() => window.open(publishedPricingUrl, '_blank', 'noopener,noreferrer')}
+              >
+                Open published Pricing
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/dashboard')}>
+                Go to Dashboard
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Plans Grid */}
         <div className="grid md:grid-cols-3 gap-5 mb-8">
