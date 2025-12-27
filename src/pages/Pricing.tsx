@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,13 +7,40 @@ import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 import { CheckCircle, Crown, Zap, Sparkles, ArrowLeft } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 const Pricing = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscription, subscribeToPlan, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
+  const { subscription, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
+
+  // Load Razorpay script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => setRazorpayLoaded(true);
+    script.onerror = () => {
+      console.error('Failed to load Razorpay script');
+      toast.error('Failed to load payment gateway');
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   const plans = [
     {
@@ -83,26 +110,115 @@ const Pricing = () => {
       return;
     }
 
+    if (!razorpayLoaded || !window.Razorpay) {
+      toast.error('Payment gateway is loading. Please try again.');
+      return;
+    }
+
     setSelectedPlan(planId);
     setIsLoading(true);
 
     try {
-      // Simulate payment processing (will be replaced with RazorPay)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const success = await subscribeToPlan(planId as 'weekly' | 'monthly' | 'yearly');
-
-      if (success) {
-        // Refresh subscription state before navigation
-        await refetch();
-        // Use hard navigation to ensure clean state
-        window.location.href = `/payment-success?plan=${planId}`;
-      } else {
-        toast.error('Payment failed. Please try again.');
+      // Get the current session for auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No active session');
       }
+
+      // Create Razorpay subscription via edge function
+      const { data, error } = await supabase.functions.invoke('razorpay-create-subscription', {
+        body: { plan_type: planId },
+      });
+
+      if (error) {
+        console.error('Razorpay subscription creation error:', error);
+        throw new Error(error.message || 'Failed to create subscription');
+      }
+
+      if (!data || !data.subscription_id) {
+        throw new Error('Invalid response from payment server');
+      }
+
+      console.log('Razorpay subscription created:', data);
+
+      // Open Razorpay checkout
+      const options = {
+        key: data.key_id,
+        subscription_id: data.subscription_id,
+        name: data.name,
+        description: data.description,
+        image: '/favicon.ico',
+        handler: async function (response: {
+          razorpay_payment_id: string;
+          razorpay_subscription_id: string;
+          razorpay_signature: string;
+        }) {
+          console.log('Razorpay payment successful:', response);
+
+          try {
+            // Verify payment with backend
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+              'razorpay-verify-payment',
+              {
+                body: {
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_subscription_id: response.razorpay_subscription_id,
+                  razorpay_signature: response.razorpay_signature,
+                  plan_type: planId,
+                },
+              }
+            );
+
+            if (verifyError) {
+              console.error('Payment verification failed:', verifyError);
+              toast.error('Payment verification failed. Please contact support.');
+              return;
+            }
+
+            console.log('Payment verified:', verifyData);
+            toast.success('Payment successful! Welcome to Dharma AI Premium.');
+
+            // Refresh subscription state
+            await refetch();
+
+            // Navigate to success page
+            window.location.href = `/payment-success?plan=${planId}`;
+          } catch (verifyErr) {
+            console.error('Error verifying payment:', verifyErr);
+            toast.error('Payment verification failed. Please contact support.');
+          }
+        },
+        prefill: {
+          email: user.email,
+        },
+        notes: {
+          user_id: user.id,
+          plan_type: planId,
+        },
+        theme: {
+          color: '#FF9933', // Saffron color
+        },
+        modal: {
+          ondismiss: function () {
+            console.log('Razorpay modal dismissed');
+            setIsLoading(false);
+            setSelectedPlan(null);
+          },
+        },
+      };
+
+      const razorpay = new window.Razorpay(options);
+      razorpay.on('payment.failed', function (response: any) {
+        console.error('Payment failed:', response.error);
+        toast.error(`Payment failed: ${response.error.description || 'Unknown error'}`);
+        setIsLoading(false);
+        setSelectedPlan(null);
+      });
+
+      razorpay.open();
     } catch (error) {
-      toast.error('Payment failed. Please try again.');
-    } finally {
+      console.error('Payment error:', error);
+      toast.error(error instanceof Error ? error.message : 'Payment failed. Please try again.');
       setIsLoading(false);
       setSelectedPlan(null);
     }
@@ -220,13 +336,15 @@ const Pricing = () => {
                 variant={plan.popular ? "saffron" : "outline"}
                 className="w-full"
                 onClick={() => handlePlanSelect(plan.id)}
-                disabled={isLoading && selectedPlan === plan.id}
+                disabled={(isLoading && selectedPlan === plan.id) || !razorpayLoaded}
               >
                 {isLoading && selectedPlan === plan.id ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     Processing...
                   </div>
+                ) : !razorpayLoaded ? (
+                  'Loading...'
                 ) : (
                   plan.buttonText
                 )}
@@ -238,7 +356,7 @@ const Pricing = () => {
         {/* Footer */}
         <div className="text-center">
           <p className="text-xs text-muted-foreground mb-3">
-            🔒 Secure payment • Cancel anytime • 24/7 support
+            🔒 Secure payment via Razorpay • Auto-renewal • Cancel anytime
           </p>
           {isTrialActive && (
             <Button
