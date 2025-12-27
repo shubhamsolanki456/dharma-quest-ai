@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { PaywallGuard } from "@/components/PaywallGuard";
+import { DebugTimeSkip } from "@/components/DebugTimeSkip";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PaywallGuard>
+          <DebugTimeSkip />
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>
