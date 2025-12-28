@@ -5,15 +5,16 @@ import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useRazorpay } from '@/hooks/useRazorpay';
 import { toast } from 'sonner';
 import { CheckCircle, Crown, Zap, Sparkles, ArrowLeft } from 'lucide-react';
 
 const Pricing = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscription, subscribeToPlan, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
+  const { subscription, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
+  const { initiatePayment, isLoading } = useRazorpay();
 
   const plans = [
     {
@@ -84,28 +85,23 @@ const Pricing = () => {
     }
 
     setSelectedPlan(planId);
-    setIsLoading(true);
 
-    try {
-      // Simulate payment processing (will be replaced with RazorPay)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      const success = await subscribeToPlan(planId as 'weekly' | 'monthly' | 'yearly');
-
-      if (success) {
-        // Refresh subscription state before navigation
+    // Initiate Razorpay payment
+    initiatePayment(
+      planId as 'weekly' | 'monthly' | 'yearly',
+      user.id,
+      user.email || '',
+      user.user_metadata?.full_name,
+      async () => {
+        // On success - refresh and redirect
         await refetch();
-        // Use hard navigation to ensure clean state
         window.location.href = `/payment-success?plan=${planId}`;
-      } else {
-        toast.error('Payment failed. Please try again.');
+      },
+      () => {
+        // On failure - reset state
+        setSelectedPlan(null);
       }
-    } catch (error) {
-      toast.error('Payment failed. Please try again.');
-    } finally {
-      setIsLoading(false);
-      setSelectedPlan(null);
-    }
+    );
   };
 
   const isTrialActive = subscription?.plan_type === 'trial' && hasActiveAccess();
