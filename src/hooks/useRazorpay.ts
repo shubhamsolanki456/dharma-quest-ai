@@ -2,11 +2,13 @@ import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-interface RazorpaySubscriptionOptions {
+interface RazorpayOptions {
   key: string;
-  subscription_id: string;
+  amount: number;
+  currency: string;
   name: string;
   description: string;
+  order_id: string;
   prefill: {
     email: string;
     name: string;
@@ -14,15 +16,15 @@ interface RazorpaySubscriptionOptions {
   theme: {
     color: string;
   };
-  handler: (response: RazorpaySubscriptionResponse) => void;
+  handler: (response: RazorpayResponse) => void;
   modal: {
     ondismiss: () => void;
   };
 }
 
-interface RazorpaySubscriptionResponse {
+interface RazorpayResponse {
+  razorpay_order_id: string;
   razorpay_payment_id: string;
-  razorpay_subscription_id: string;
   razorpay_signature: string;
 }
 
@@ -33,7 +35,7 @@ interface RazorpayInstance {
 
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpaySubscriptionOptions) => RazorpayInstance;
+    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
   }
 }
 
@@ -72,40 +74,42 @@ export const useRazorpay = () => {
         throw new Error('Failed to load Razorpay. Please check your internet connection.');
       }
 
-      // Create subscription via edge function
-      const { data: subscriptionData, error: subscriptionError } = await supabase.functions.invoke(
+      // Create order via edge function
+      const { data: orderData, error: orderError } = await supabase.functions.invoke(
         'create-razorpay-order',
         {
           body: { planType, userId, userEmail, userName },
         }
       );
 
-      if (subscriptionError || !subscriptionData?.subscriptionId) {
-        throw new Error(subscriptionData?.error || 'Failed to create subscription');
+      if (orderError || !orderData?.orderId) {
+        throw new Error(orderData?.error || 'Failed to create order');
       }
 
-      // Configure Razorpay options for subscription
-      const options: RazorpaySubscriptionOptions = {
-        key: subscriptionData.keyId,
-        subscription_id: subscriptionData.subscriptionId,
+      // Configure Razorpay options
+      const options: RazorpayOptions = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
         name: 'Dharma AI',
         description: `${planType.charAt(0).toUpperCase() + planType.slice(1)} Subscription`,
+        order_id: orderData.orderId,
         prefill: {
-          email: subscriptionData.prefill.email,
-          name: subscriptionData.prefill.name || '',
+          email: orderData.prefill.email,
+          name: orderData.prefill.name || '',
         },
         theme: {
           color: '#FF6B00', // Saffron color
         },
-        handler: async (response: RazorpaySubscriptionResponse) => {
+        handler: async (response: RazorpayResponse) => {
           try {
             // Verify payment via edge function
             const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
               'verify-razorpay-payment',
               {
                 body: {
+                  razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_subscription_id: response.razorpay_subscription_id,
                   razorpay_signature: response.razorpay_signature,
                   planType,
                   userId,
@@ -117,7 +121,7 @@ export const useRazorpay = () => {
               throw new Error(verifyData?.error || 'Payment verification failed');
             }
 
-            toast.success('Subscription activated!');
+            toast.success('Payment successful!');
             onSuccess?.();
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
