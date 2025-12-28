@@ -1,10 +1,1 @@
 project_id = "vjrrmpxdsytwglbhnhjg"
-
-[functions.ai-scripture-chat]
-verify_jwt = true
-
-[functions.razorpay-create-subscription]
-verify_jwt = true
-
-[functions.razorpay-webhook]
-verify_jwt = false

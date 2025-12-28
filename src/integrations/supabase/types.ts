@@ -418,10 +418,6 @@ export type Database = {
           id: string
           is_active: boolean
           plan_type: string
-          razorpay_customer_id: string | null
-          razorpay_payment_id: string | null
-          razorpay_plan_id: string | null
-          razorpay_subscription_id: string | null
           subscription_end_date: string | null
           subscription_start_date: string | null
           trial_end_date: string
@@ -435,10 +431,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           plan_type?: string
-          razorpay_customer_id?: string | null
-          razorpay_payment_id?: string | null
-          razorpay_plan_id?: string | null
-          razorpay_subscription_id?: string | null
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           trial_end_date?: string
@@ -452,10 +444,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           plan_type?: string
-          razorpay_customer_id?: string | null
-          razorpay_payment_id?: string | null
-          razorpay_plan_id?: string | null
-          razorpay_subscription_id?: string | null
           subscription_end_date?: string | null
           subscription_start_date?: string | null
           trial_end_date?: string

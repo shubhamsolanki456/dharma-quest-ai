@@ -57,19 +57,19 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
       return;
     }
 
-    // SCENARIO 4: Has trial/premium but trial has EXPIRED → Go to Pricing/Paywall (check BEFORE trial activation)
-    if (isTrialExpired(subscription) || isSubscriptionExpired()) {
-      if (!isPublicRoute && !isAuthOnlyRoute) {
-        navigate('/pricing');
-      }
-      return;
-    }
-
-    // SCENARIO 5: Completed onboarding but hasn't activated free trial → Go to Activate Trial
+    // SCENARIO 4: Completed onboarding but hasn't activated free trial → Go to Activate Trial
     const trialActivated = localStorage.getItem('trial_activated') === 'true';
     if (!trialActivated) {
       if (!isPublicRoute && !isAuthOnlyRoute) {
         navigate('/start-free-trial');
+      }
+      return;
+    }
+
+    // SCENARIO 5: Has trial/premium but trial has EXPIRED → Go to Pricing/Paywall
+    if (isTrialExpired(subscription) || isSubscriptionExpired()) {
+      if (!isPublicRoute && !isAuthOnlyRoute) {
+        navigate('/pricing');
       }
       return;
     }
