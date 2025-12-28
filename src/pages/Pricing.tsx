@@ -20,63 +20,68 @@ const Pricing = () => {
     {
       id: 'weekly',
       name: 'Weekly',
-      price: '₹99',
-      period: 'week',
-      description: 'Try the full experience',
+      price: '₹49',
+      period: '/week',
+      description: 'Perfect for trying out',
       features: [
-        'Unlimited AI Scripture Chat',
-        'Advanced streak tracking',
-        'Daily personalized quests',
-        'Sin tracking & redemption',
-        'Detailed progress analytics'
+        'Full app access',
+        'All meditation sessions',
+        'Daily shlokas',
+        'Basic AI guidance',
       ],
-      buttonText: 'Start Weekly Plan',
       icon: Zap,
-      gradient: 'from-blue-500/20 to-cyan-500/20',
-      borderColor: 'border-blue-500/30'
+      color: 'from-blue-500 to-cyan-500',
+      buttonText: 'Start Weekly Plan',
     },
     {
       id: 'monthly',
       name: 'Monthly',
-      price: '₹199',
-      originalPrice: '₹499',
-      period: 'month',
+      price: '₹149',
+      period: '/month',
       description: 'Most popular choice',
-      savings: 'Save 60%',
+      popular: true,
       features: [
-        'Unlimited AI Scripture Chat',
-        'Advanced streak tracking',
-        'Daily personalized quests',
-        'Sin tracking & redemption',
-        'Detailed progress analytics'
+        'Everything in Weekly',
+        'Unlimited AI conversations',
+        'Advanced analytics',
+        'Priority support',
+        'Exclusive content',
       ],
+      icon: Crown,
+      color: 'from-saffron to-orange-500',
       buttonText: 'Start Monthly Plan',
-      icon: Sparkles,
-      gradient: 'from-saffron/20 to-dharma/20',
-      borderColor: 'border-saffron',
-      popular: true
     },
     {
       id: 'yearly',
       name: 'Yearly',
-      price: '₹1,999',
-      originalPrice: '₹2,499',
-      period: 'year',
+      price: '₹999',
+      period: '/year',
+      originalPrice: '₹1,788',
+      savings: 'Save 44%',
       description: 'Best value for seekers',
-      savings: 'Save 20%',
       features: [
-        'Unlimited AI Scripture Chat',
-        'Advanced streak tracking',
-        'Daily personalized quests',
-        'Sin tracking & redemption',
-        'Detailed progress analytics'
+        'Everything in Monthly',
+        'Personal dharma coach',
+        'Lifetime streak protection',
+        'Early access to features',
+        'Community access',
+        'Annual spiritual report',
       ],
+      icon: Sparkles,
+      color: 'from-purple-500 to-pink-500',
       buttonText: 'Start Yearly Plan',
-      icon: Crown,
-      gradient: 'from-purple-500/20 to-pink-500/20',
-      borderColor: 'border-purple-500/30'
-    }
+    },
   ];
+
+  // Helper to calculate subscription end date
+  const getEndDate = (planType: string): Date => {
+    const date = new Date();
+    if (planType === 'weekly') date.setDate(date.getDate() + 7);
+    else if (planType === 'monthly') date.setMonth(date.getMonth() + 1);
+    else if (planType === 'yearly') date.setFullYear(date.getFullYear() + 1);
+    else date.setMonth(date.getMonth() + 1);
+    return date;
+  };
 
   const handlePlanSelect = async (planId: string) => {
     if (!user) {
@@ -88,170 +93,159 @@ const Pricing = () => {
     setIsLoading(true);
 
     try {
-      // Create subscription and use Razorpay-hosted short_url (same approach as your GitHub repo)
-      const { data, error } = await supabase.functions.invoke('razorpay-create-subscription', {
-        body: { plan_type: planId },
-      });
+      // Simulated payment - directly update subscription in database
+      const endDate = getEndDate(planId);
+
+      const { error } = await supabase
+        .from('user_subscriptions')
+        .update({
+          plan_type: planId,
+          is_active: true,
+          subscription_start_date: new Date().toISOString(),
+          subscription_end_date: endDate.toISOString(),
+        })
+        .eq('user_id', user.id);
 
       if (error) {
-        throw new Error(error.message || 'Failed to create subscription');
+        throw new Error(error.message || 'Failed to activate subscription');
       }
 
-      if (!data?.short_url) {
-        throw new Error('Payment link not available.');
-      }
-
-      toast.message('Opening Razorpay…');
-      window.location.href = data.short_url;
+      toast.success('Payment successful!');
+      
+      // Refetch and navigate to success page
+      await refetch();
+      navigate(`/payment-success?plan=${planId}`);
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error instanceof Error ? error.message : 'Payment failed. Please try again.');
+    } finally {
       setIsLoading(false);
       setSelectedPlan(null);
     }
   };
 
-  const isTrialActive = subscription?.plan_type === 'trial' && hasActiveAccess();
-  const trialDaysRemaining = isTrialActive ? getDaysRemaining() : 0;
+  const isTrialActive = subscription?.plan_type === 'trial' && hasActiveAccess;
+  const daysRemaining = getDaysRemaining();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 py-8 px-4">
-      <div className="container mx-auto max-w-5xl">
-        {/* Back button */}
-        {hasActiveAccess() && (
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            className="mb-4"
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-        )}
-
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-display mb-3 text-gradient-saffron">
-            Choose Your Path
-          </h1>
-          <p className="text-lg text-muted-foreground mb-4">
-            Continue your spiritual journey with Dharma AI
-          </p>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-saffron/20 via-background to-maroon/10 pt-8 pb-12 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          {hasActiveAccess && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(-1)}
+              className="absolute left-4 top-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+          )}
           
-          {/* Trial info or expired message */}
-          {isTrialActive ? (
-            <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 max-w-md mx-auto">
-              <p className="text-sm">
-                ✨ <strong className="text-green-400">{trialDaysRemaining} days</strong> remaining in your free trial
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Subscribe now to continue uninterrupted access
-              </p>
-            </div>
-          ) : subscription && !hasActiveAccess() ? (
-            <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-xl p-4 max-w-md mx-auto">
-              <p className="text-sm text-red-400">
-                🔒 Your trial has expired
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Choose a plan below to continue your journey
-              </p>
-            </div>
-          ) : !subscription && (
-            <div className="bg-gradient-to-r from-saffron/10 to-dharma/10 border border-saffron/30 rounded-xl p-4 max-w-md mx-auto">
-              <p className="text-sm">
-                🎁 <strong>7-Day Free Trial</strong> • No credit card required
-              </p>
-            </div>
+          <div className="inline-flex items-center gap-2 bg-saffron/20 text-saffron px-4 py-2 rounded-full mb-6">
+            <Crown className="h-4 w-4" />
+            <span className="text-sm font-medium">Choose Your Path</span>
+          </div>
+          
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Unlock Your Spiritual Journey
+          </h1>
+          
+          {isTrialActive && daysRemaining !== null && daysRemaining > 0 ? (
+            <p className="text-muted-foreground text-lg">
+              You have <span className="text-saffron font-semibold">{daysRemaining} days</span> left in your free trial.
+              <br />Subscribe now to continue your journey.
+            </p>
+          ) : (
+            <p className="text-muted-foreground text-lg">
+              Your trial has expired. Subscribe to continue your spiritual practice.
+            </p>
           )}
         </div>
+      </div>
 
-        {/* Plans Grid */}
-        <div className="grid md:grid-cols-3 gap-5 mb-8">
-          {plans.map((plan) => (
-            <Card 
-              key={plan.id} 
-              className={`relative p-5 bg-gradient-to-br ${plan.gradient} backdrop-blur-sm ${
-                plan.popular 
-                  ? 'border-saffron shadow-lg shadow-saffron/20 scale-105 z-10' 
-                  : plan.borderColor
-              }`}
-            >
-              {plan.popular && (
-                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-saffron text-white border-0">
-                  Most Popular
-                </Badge>
-              )}
-              
-              <div className="text-center mb-5">
-                <div className={`p-3 rounded-2xl w-fit mx-auto mb-3 ${
-                  plan.popular ? 'bg-gradient-saffron' : 'bg-muted'
-                }`}>
-                  <plan.icon className={`h-7 w-7 ${
-                    plan.popular ? 'text-white' : 'text-foreground'
-                  }`} />
-                </div>
+      {/* Plans */}
+      <div className="max-w-4xl mx-auto px-4 -mt-6 pb-8">
+        <div className="grid md:grid-cols-3 gap-6">
+          {plans.map((plan) => {
+            const Icon = plan.icon;
+            return (
+              <Card
+                key={plan.id}
+                className={`relative p-6 ${
+                  plan.popular
+                    ? 'border-saffron shadow-lg shadow-saffron/20 scale-105'
+                    : 'border-border'
+                }`}
+              >
+                {plan.popular && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-saffron text-white">
+                    Most Popular
+                  </Badge>
+                )}
                 
-                <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
-                <div className="mb-1">
-                  {plan.originalPrice && (
-                    <span className="text-sm text-muted-foreground line-through mr-2">
-                      {plan.originalPrice}
-                    </span>
-                  )}
-                  <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm">/{plan.period}</span>
-                </div>
                 {plan.savings && (
-                  <Badge variant="secondary" className="mb-1 text-xs">
+                  <Badge variant="secondary" className="absolute -top-3 right-4 bg-green-500/20 text-green-400">
                     {plan.savings}
                   </Badge>
                 )}
-                <p className="text-xs text-muted-foreground">{plan.description}</p>
-              </div>
 
-              <ul className="space-y-2 mb-5">
-                {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2">
-                    <CheckCircle className="h-4 w-4 text-dharma flex-shrink-0 mt-0.5" />
-                    <span className="text-xs">{feature}</span>
-                  </li>
-                ))}
-              </ul>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-4`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
 
-              <Button
-                variant={plan.popular ? "saffron" : "outline"}
-                className="w-full"
-                onClick={() => handlePlanSelect(plan.id)}
-                disabled={isLoading && selectedPlan === plan.id}
-              >
-                {isLoading && selectedPlan === plan.id ? (
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                    Processing...
+                <h3 className="text-xl font-bold text-foreground mb-1">{plan.name}</h3>
+                <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>
+
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+                    <span className="text-muted-foreground">{plan.period}</span>
                   </div>
-                ) : (
-                  plan.buttonText
-                )}
-              </Button>
-            </Card>
-          ))}
+                  {plan.originalPrice && (
+                    <p className="text-sm text-muted-foreground line-through">{plan.originalPrice}/year</p>
+                  )}
+                </div>
+
+                <ul className="space-y-3 mb-6">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <CheckCircle className="h-5 w-5 text-saffron shrink-0 mt-0.5" />
+                      <span className="text-sm text-foreground">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <Button
+                  variant={plan.popular ? "saffron" : "outline"}
+                  className="w-full"
+                  onClick={() => handlePlanSelect(plan.id)}
+                  disabled={isLoading && selectedPlan === plan.id}
+                >
+                  {isLoading && selectedPlan === plan.id ? (
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      Processing...
+                    </div>
+                  ) : (
+                    plan.buttonText
+                  )}
+                </Button>
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Footer */}
-        <div className="text-center">
-          <p className="text-xs text-muted-foreground mb-3">
-            🔒 Secure payment via Razorpay • Auto-renewal • Cancel anytime
-          </p>
-          {isTrialActive && (
-            <Button
-              variant="link"
-              onClick={() => navigate('/dashboard')}
-              className="text-sm"
-            >
-              Continue with trial ({trialDaysRemaining} days left)
-            </Button>
-          )}
+        {/* Trust badges */}
+        <div className="mt-12 text-center">
+          <p className="text-muted-foreground text-sm mb-4">Secure payment • Cancel anytime • 7-day money-back guarantee</p>
+          <div className="flex items-center justify-center gap-6 opacity-60">
+            <div className="text-xs text-muted-foreground">🔒 SSL Secured</div>
+            <div className="text-xs text-muted-foreground">✓ Instant Access</div>
+            <div className="text-xs text-muted-foreground">💳 All Cards Accepted</div>
+          </div>
         </div>
       </div>
     </div>
