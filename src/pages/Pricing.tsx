@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,35 +9,12 @@ import { toast } from 'sonner';
 import { CheckCircle, Crown, Zap, Sparkles, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
-
 const Pricing = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { subscription, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
-
-  // Load Razorpay script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => toast.error('Failed to load payment gateway');
-    document.body.appendChild(script);
-
-    return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
 
   const plans = [
     {
@@ -107,16 +84,11 @@ const Pricing = () => {
       return;
     }
 
-    if (!razorpayLoaded || !window.Razorpay) {
-      toast.error('Payment gateway is loading. Please try again.');
-      return;
-    }
-
     setSelectedPlan(planId);
     setIsLoading(true);
 
     try {
-      // Create Razorpay subscription via edge function
+      // Create subscription and use Razorpay-hosted short_url (same approach as your GitHub repo)
       const { data, error } = await supabase.functions.invoke('razorpay-create-subscription', {
         body: { plan_type: planId },
       });
@@ -125,38 +97,12 @@ const Pricing = () => {
         throw new Error(error.message || 'Failed to create subscription');
       }
 
-      if (!data || !data.subscription_id) {
-        throw new Error('Invalid response from payment server');
+      if (!data?.short_url) {
+        throw new Error('Payment link not available.');
       }
 
-      console.log('Subscription created:', data.subscription_id);
-
-      // Open Razorpay checkout - minimal config
-      const razorpay = new window.Razorpay({
-        key: data.key_id,
-        subscription_id: data.subscription_id,
-        handler: function () {
-          toast.success('Payment successful!');
-          setTimeout(() => {
-            refetch();
-            window.location.href = `/payment-success?plan=${planId}`;
-          }, 1500);
-        },
-        modal: {
-          ondismiss: () => {
-            setIsLoading(false);
-            setSelectedPlan(null);
-          },
-        },
-      });
-
-      razorpay.on('payment.failed', function () {
-        toast.error('Payment failed. Please try again.');
-        setIsLoading(false);
-        setSelectedPlan(null);
-      });
-
-      razorpay.open();
+      toast.message('Opening Razorpay…');
+      window.location.href = data.short_url;
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error instanceof Error ? error.message : 'Payment failed. Please try again.');
@@ -277,15 +223,13 @@ const Pricing = () => {
                 variant={plan.popular ? "saffron" : "outline"}
                 className="w-full"
                 onClick={() => handlePlanSelect(plan.id)}
-                disabled={(isLoading && selectedPlan === plan.id) || !razorpayLoaded}
+                disabled={isLoading && selectedPlan === plan.id}
               >
                 {isLoading && selectedPlan === plan.id ? (
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                     Processing...
                   </div>
-                ) : !razorpayLoaded ? (
-                  'Loading...'
                 ) : (
                   plan.buttonText
                 )}
