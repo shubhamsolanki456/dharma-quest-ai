@@ -131,46 +131,27 @@ const Pricing = () => {
 
       console.log('Subscription created:', data.subscription_id);
 
-      // Open Razorpay checkout
-      const options = {
+      // Open Razorpay checkout - minimal config
+      const razorpay = new window.Razorpay({
         key: data.key_id,
         subscription_id: data.subscription_id,
-        name: 'Dharma AI',
-        description: `${planId.charAt(0).toUpperCase() + planId.slice(1)} Subscription`,
-        image: '/dharma-logo.png',
-        handler: async function () {
-          // Payment successful - webhook will activate subscription
-          console.log('Payment completed');
-          toast.success('Payment successful! Activating your subscription...');
-          
-          // Wait a moment for webhook to process, then refresh
-          setTimeout(async () => {
-            await refetch();
+        handler: function () {
+          toast.success('Payment successful!');
+          setTimeout(() => {
+            refetch();
             window.location.href = `/payment-success?plan=${planId}`;
-          }, 2000);
-        },
-        prefill: {
-          email: user.email,
-        },
-        notes: {
-          user_id: user.id,
-          plan_type: planId,
-        },
-        theme: {
-          color: '#FF9933',
+          }, 1500);
         },
         modal: {
-          ondismiss: function () {
+          ondismiss: () => {
             setIsLoading(false);
             setSelectedPlan(null);
           },
         },
-      };
+      });
 
-      const razorpay = new window.Razorpay(options);
-      razorpay.on('payment.failed', function (response: any) {
-        console.error('Payment failed:', response?.error);
-        toast.error(`Payment failed: ${response?.error?.description || 'Unknown error'}`);
+      razorpay.on('payment.failed', function () {
+        toast.error('Payment failed. Please try again.');
         setIsLoading(false);
         setSelectedPlan(null);
       });
