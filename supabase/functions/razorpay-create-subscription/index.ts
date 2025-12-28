@@ -6,45 +6,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Razorpay plan IDs - these should be created in Razorpay Dashboard
-// You'll need to create these plans in Razorpay and update these IDs
-const RAZORPAY_PLANS: Record<string, { plan_id: string; amount: number }> = {
-  weekly: { plan_id: "plan_RwjapeZbxoyVMQ", amount: 9900 }, // ₹99 in paise
-  monthly: { plan_id: "plan_RwjcY0BC3l7xiH", amount: 19900 }, // ₹199 in paise
-  yearly: { plan_id: "plan_RwjeABJvraSqIX", amount: 199900 }, // ₹1999 in paise
+// Razorpay Plan IDs - create these in Razorpay Dashboard first
+const PLANS: Record<string, string> = {
+  weekly: "plan_RwjapeZbxoyVMQ",
+  monthly: "plan_RwjcY0BC3l7xiH",
+  yearly: "plan_RwjeABJvraSqIX",
 };
-
-// Helper function to get a valid customer name for Razorpay (min 4 chars, must contain letters)
-const getValidCustomerName = (user: { email?: string; user_metadata?: { full_name?: string; name?: string } }): string => {
-  // Try to get name from user metadata first
-  const metadataName = user.user_metadata?.full_name || user.user_metadata?.name;
-  if (metadataName && metadataName.length >= 4 && /[a-zA-Z]/.test(metadataName)) {
-    return metadataName.trim();
-  }
-  
-  // Try email prefix
-  const emailPrefix = user.email?.split("@")[0] || "";
-  // Clean the prefix - keep only letters and spaces
-  const cleanedPrefix = emailPrefix.replace(/[^a-zA-Z\s]/g, '').trim();
-  if (cleanedPrefix.length >= 4) {
-    return cleanedPrefix;
-  }
-  
-  // If cleaned prefix is too short, try padding with the original (for names like "Jo")
-  if (cleanedPrefix.length > 0) {
-    return `${cleanedPrefix} User`;
-  }
-  
-  // Fallback to a valid default name
-  return "Dharma User";
-};
-
-interface CreateSubscriptionRequest {
-  plan_type: "weekly" | "monthly" | "yearly";
-}
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -56,84 +25,42 @@ serve(async (req: Request) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-      console.error("Razorpay credentials not configured");
       throw new Error("Razorpay credentials not configured");
     }
 
-    // Get the authorization header to extract user
+    // Authenticate user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("No authorization header");
     }
 
-    // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
-
-    // Get user from token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
-      console.error("User authentication error:", userError);
       throw new Error("Unauthorized");
     }
 
-    const { plan_type }: CreateSubscriptionRequest = await req.json();
-
-    if (!plan_type || !RAZORPAY_PLANS[plan_type]) {
+    const { plan_type } = await req.json();
+    if (!plan_type || !PLANS[plan_type]) {
       throw new Error("Invalid plan type");
     }
 
-    console.log(`Creating Razorpay subscription for user ${user.id}, plan: ${plan_type}`);
+    console.log(`Creating subscription for user ${user.id}, plan: ${plan_type}`);
 
-    // Check if user already has a Razorpay customer ID
-    const { data: existingSubscription } = await supabase
-      .from("user_subscriptions")
-      .select("razorpay_customer_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const authString = btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
 
-    let customerId = existingSubscription?.razorpay_customer_id;
-
-    // Create customer if doesn't exist
-    if (!customerId) {
-      const customerResponse = await fetch("https://api.razorpay.com/v1/customers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
-        },
-        body: JSON.stringify({
-          name: getValidCustomerName(user),
-          email: user.email,
-          fail_existing: "0", // Return existing customer if email exists
-        }),
-      });
-
-      if (!customerResponse.ok) {
-        const errorText = await customerResponse.text();
-        console.error("Razorpay customer creation failed:", errorText);
-        throw new Error("Failed to create Razorpay customer");
-      }
-
-      const customer = await customerResponse.json();
-      customerId = customer.id;
-      console.log("Created Razorpay customer:", customerId);
-    }
-
-    // Create subscription
-    const planConfig = RAZORPAY_PLANS[plan_type];
-    const subscriptionResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
+    // Create Razorpay subscription directly
+    const subResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Basic ${btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`)}`,
+        Authorization: `Basic ${authString}`,
       },
       body: JSON.stringify({
-        plan_id: planConfig.plan_id,
-        customer_id: customerId,
-        total_count: plan_type === "yearly" ? 10 : 52, // Max billing cycles
-        quantity: 1,
+        plan_id: PLANS[plan_type],
+        total_count: 12,
         customer_notify: 1,
         notes: {
           user_id: user.id,
@@ -142,37 +69,28 @@ serve(async (req: Request) => {
       }),
     });
 
-    if (!subscriptionResponse.ok) {
-      const errorText = await subscriptionResponse.text();
-      console.error("Razorpay subscription creation failed:", errorText);
-      throw new Error("Failed to create Razorpay subscription");
+    if (!subResponse.ok) {
+      const errorText = await subResponse.text();
+      console.error("Razorpay error:", errorText);
+      throw new Error("Failed to create subscription");
     }
 
-    const subscription = await subscriptionResponse.json();
-    console.log("Created Razorpay subscription:", subscription.id);
+    const subscription = await subResponse.json();
+    console.log("Created subscription:", subscription.id);
 
-    // Store the subscription ID temporarily
+    // Store subscription ID in database
     await supabase
       .from("user_subscriptions")
-      .upsert({
-        user_id: user.id,
-        razorpay_customer_id: customerId,
+      .update({
         razorpay_subscription_id: subscription.id,
-        razorpay_plan_id: planConfig.plan_id,
-        plan_type: "trial", // Will be updated to actual plan after payment
-        is_active: existingSubscription ? undefined : true,
-        has_completed_onboarding: existingSubscription ? undefined : true,
-      }, { onConflict: "user_id" });
+        razorpay_plan_id: PLANS[plan_type],
+      })
+      .eq("user_id", user.id);
 
     return new Response(
       JSON.stringify({
         subscription_id: subscription.id,
         key_id: RAZORPAY_KEY_ID,
-        amount: planConfig.amount,
-        currency: "INR",
-        name: "Dharma AI",
-        description: `${plan_type.charAt(0).toUpperCase() + plan_type.slice(1)} Subscription`,
-        customer_id: customerId,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -180,10 +98,9 @@ serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Error in razorpay-create-subscription:", error);
-    const errorMessage = error instanceof Error ? error.message : "An error occurred";
+    console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error instanceof Error ? error.message : "Error" }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,

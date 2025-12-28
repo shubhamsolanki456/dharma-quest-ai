@@ -23,25 +23,13 @@ const Pricing = () => {
   const { user } = useAuth();
   const { subscription, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
 
-  const publishedPricingUrl = 'https://dharma-quest-companion.lovable.app/pricing';
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-  const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isInIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
-  const isPreviewHost =
-    currentHostname === 'localhost' ||
-    currentHostname.endsWith('.lovableproject.com') ||
-    currentHostname.includes('lovableproject.com');
-
   // Load Razorpay script
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
     script.onload = () => setRazorpayLoaded(true);
-    script.onerror = () => {
-      console.error('Failed to load Razorpay script');
-      toast.error('Failed to load payment gateway');
-    };
+    script.onerror = () => toast.error('Failed to load payment gateway');
     document.body.appendChild(script);
 
     return () => {
@@ -119,15 +107,6 @@ const Pricing = () => {
       return;
     }
 
-    // Razorpay blocks payments when embedded in iframes and on preview domains.
-    // Force checkout to happen on the published site in a real browser tab.
-    if (isInIframe || isPreviewHost) {
-      const why = isInIframe ? 'embedded iframe' : `preview domain (${currentHostname})`;
-      toast.error(`Payments are blocked here (${why}). Opening published site...`);
-      window.open(publishedPricingUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
     if (!razorpayLoaded || !window.Razorpay) {
       toast.error('Payment gateway is loading. Please try again.');
       return;
@@ -137,19 +116,12 @@ const Pricing = () => {
     setIsLoading(true);
 
     try {
-      // Get the current session for auth token
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No active session');
-      }
-
       // Create Razorpay subscription via edge function
       const { data, error } = await supabase.functions.invoke('razorpay-create-subscription', {
         body: { plan_type: planId },
       });
 
       if (error) {
-        console.error('Razorpay subscription creation error:', error);
         throw new Error(error.message || 'Failed to create subscription');
       }
 
@@ -157,62 +129,25 @@ const Pricing = () => {
         throw new Error('Invalid response from payment server');
       }
 
-      console.log('Razorpay subscription created:', data);
-
-      const keyMode = typeof data.key_id === 'string' && data.key_id.startsWith('rzp_test') ? 'test' : 'live';
-      console.log('Razorpay checkout diagnostics:', {
-        origin: currentOrigin,
-        hostname: currentHostname,
-        embedded: isInIframe,
-        keyMode,
-      });
+      console.log('Subscription created:', data.subscription_id);
 
       // Open Razorpay checkout
       const options = {
         key: data.key_id,
         subscription_id: data.subscription_id,
-        name: data.name,
-        description: data.description,
+        name: 'Dharma AI',
+        description: `${planId.charAt(0).toUpperCase() + planId.slice(1)} Subscription`,
         image: '/dharma-logo.png',
-        handler: async function (response: {
-          razorpay_payment_id: string;
-          razorpay_subscription_id: string;
-          razorpay_signature: string;
-        }) {
-          console.log('Razorpay payment successful:', response);
-
-          try {
-            // Verify payment with backend
-            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-              'razorpay-verify-payment',
-              {
-                body: {
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_subscription_id: response.razorpay_subscription_id,
-                  razorpay_signature: response.razorpay_signature,
-                  plan_type: planId,
-                },
-              }
-            );
-
-            if (verifyError) {
-              console.error('Payment verification failed:', verifyError);
-              toast.error('Payment verification failed. Please contact support.');
-              return;
-            }
-
-            console.log('Payment verified:', verifyData);
-            toast.success('Payment successful! Welcome to Dharma AI Premium.');
-
-            // Refresh subscription state
+        handler: async function () {
+          // Payment successful - webhook will activate subscription
+          console.log('Payment completed');
+          toast.success('Payment successful! Activating your subscription...');
+          
+          // Wait a moment for webhook to process, then refresh
+          setTimeout(async () => {
             await refetch();
-
-            // Navigate to success page
             window.location.href = `/payment-success?plan=${planId}`;
-          } catch (verifyErr) {
-            console.error('Error verifying payment:', verifyErr);
-            toast.error('Payment verification failed. Please contact support.');
-          }
+          }, 2000);
         },
         prefill: {
           email: user.email,
@@ -222,11 +157,10 @@ const Pricing = () => {
           plan_type: planId,
         },
         theme: {
-          color: '#FF9933', // Saffron color
+          color: '#FF9933',
         },
         modal: {
           ondismiss: function () {
-            console.log('Razorpay modal dismissed');
             setIsLoading(false);
             setSelectedPlan(null);
           },
@@ -235,11 +169,8 @@ const Pricing = () => {
 
       const razorpay = new window.Razorpay(options);
       razorpay.on('payment.failed', function (response: any) {
-        const description = response?.error?.description || 'Unknown error';
         console.error('Payment failed:', response?.error);
-        toast.error(
-          `Payment failed: ${description} (site: ${currentHostname || currentOrigin}, embedded: ${isInIframe ? 'yes' : 'no'}, mode: ${keyMode})`
-        );
+        toast.error(`Payment failed: ${response?.error?.description || 'Unknown error'}`);
         setIsLoading(false);
         setSelectedPlan(null);
       });
@@ -307,28 +238,6 @@ const Pricing = () => {
             </div>
           )}
         </div>
-
-        {isPreviewHost && (
-          <div className="mb-6 bg-gradient-to-r from-saffron/10 to-dharma/10 border border-saffron/30 rounded-xl p-4 max-w-2xl mx-auto text-center">
-            <p className="text-sm">
-              Payments are blocked on preview domains by Razorpay.
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              You are currently on <strong>{currentOrigin}</strong>.
-            </p>
-            <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
-              <Button
-                variant="saffron"
-                onClick={() => window.open(publishedPricingUrl, '_blank', 'noopener,noreferrer')}
-              >
-                Open published Pricing
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/dashboard')}>
-                Go to Dashboard
-              </Button>
-            </div>
-          </div>
-        )}
 
         {/* Plans Grid */}
         <div className="grid md:grid-cols-3 gap-5 mb-8">
