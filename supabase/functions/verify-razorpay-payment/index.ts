@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 interface VerifyRequest {
-  razorpay_order_id: string;
   razorpay_payment_id: string;
+  razorpay_subscription_id: string;
   razorpay_signature: string;
   planType: 'weekly' | 'monthly' | 'yearly';
   userId: string;
@@ -20,14 +20,14 @@ const PLAN_DURATIONS: Record<string, number> = {
   yearly: 365,
 };
 
-async function verifySignature(
-  orderId: string,
+async function verifySubscriptionSignature(
+  subscriptionId: string,
   paymentId: string,
   signature: string,
   secret: string
 ): Promise<boolean> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(`${orderId}|${paymentId}`);
+  const data = encoder.encode(`${paymentId}|${subscriptionId}`);
   const key = encoder.encode(secret);
   
   const cryptoKey = await crypto.subtle.importKey(
@@ -53,14 +53,14 @@ serve(async (req) => {
 
   try {
     const { 
-      razorpay_order_id, 
       razorpay_payment_id, 
+      razorpay_subscription_id, 
       razorpay_signature, 
       planType, 
       userId 
     } = await req.json() as VerifyRequest;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !planType || !userId) {
+    if (!razorpay_payment_id || !razorpay_subscription_id || !razorpay_signature || !planType || !userId) {
       throw new Error("Missing required fields");
     }
 
@@ -69,20 +69,20 @@ serve(async (req) => {
       throw new Error("Razorpay secret not configured");
     }
 
-    // Verify signature
-    const isValid = await verifySignature(
-      razorpay_order_id,
+    // Verify subscription signature
+    const isValid = await verifySubscriptionSignature(
+      razorpay_subscription_id,
       razorpay_payment_id,
       razorpay_signature,
       razorpayKeySecret
     );
 
     if (!isValid) {
-      console.error("Invalid payment signature");
+      console.error("Invalid subscription signature");
       throw new Error("Payment verification failed - invalid signature");
     }
 
-    console.log("Payment signature verified successfully");
+    console.log("Subscription signature verified successfully");
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -105,6 +105,7 @@ serve(async (req) => {
         subscription_end_date: endDate.toISOString(),
         is_active: true,
         razorpay_payment_id: razorpay_payment_id,
+        razorpay_subscription_id: razorpay_subscription_id,
         updated_at: new Date().toISOString(),
       }, { 
         onConflict: "user_id" 
