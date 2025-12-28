@@ -53,7 +53,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: amount,
         currency: "INR",
-        receipt: `order_${userId}_${Date.now()}`,
+        receipt: `rcpt_${userId.slice(-8)}_${Date.now().toString().slice(-8)}`,
         notes: {
           plan_type: planType,
           user_id: userId,
