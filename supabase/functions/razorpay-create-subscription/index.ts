@@ -90,6 +90,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         subscription_id: subscription.id,
+        short_url: subscription.short_url,
         key_id: RAZORPAY_KEY_ID,
       }),
       {
