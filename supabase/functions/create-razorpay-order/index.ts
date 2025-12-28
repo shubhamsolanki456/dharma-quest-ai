@@ -13,10 +13,10 @@ interface OrderRequest {
   userName?: string;
 }
 
-const PLAN_PRICES: Record<string, number> = {
-  weekly: 9900,    // ₹99 in paise
-  monthly: 19900,  // ₹199 in paise
-  yearly: 199900,  // ₹1999 in paise
+const PLAN_IDS: Record<string, string> = {
+  weekly: 'plan_RwjapeZbxoyVMQ',
+  monthly: 'plan_RwjcY0BC3l7xiH',
+  yearly: 'plan_RwjeABJvraSqIX',
 };
 
 serve(async (req) => {
@@ -31,8 +31,8 @@ serve(async (req) => {
       throw new Error("Missing required fields: planType, userId, or userEmail");
     }
 
-    const amount = PLAN_PRICES[planType];
-    if (!amount) {
+    const planId = PLAN_IDS[planType];
+    if (!planId) {
       throw new Error(`Invalid plan type: ${planType}`);
     }
 
@@ -43,17 +43,17 @@ serve(async (req) => {
       throw new Error("Razorpay credentials not configured");
     }
 
-    // Create Razorpay order
-    const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
+    // Create Razorpay subscription
+    const subscriptionResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`,
       },
       body: JSON.stringify({
-        amount: amount,
-        currency: "INR",
-        receipt: `rcpt_${userId.slice(-8)}_${Date.now().toString().slice(-8)}`,
+        plan_id: planId,
+        customer_notify: 1,
+        total_count: planType === 'yearly' ? 10 : 12,
         notes: {
           plan_type: planType,
           user_id: userId,
@@ -62,21 +62,19 @@ serve(async (req) => {
       }),
     });
 
-    if (!orderResponse.ok) {
-      const errorData = await orderResponse.text();
+    if (!subscriptionResponse.ok) {
+      const errorData = await subscriptionResponse.text();
       console.error("Razorpay API error:", errorData);
-      throw new Error(`Failed to create Razorpay order: ${orderResponse.status}`);
+      throw new Error(`Failed to create Razorpay subscription: ${subscriptionResponse.status}`);
     }
 
-    const orderData = await orderResponse.json();
+    const subscriptionData = await subscriptionResponse.json();
 
-    console.log("Razorpay order created:", orderData.id);
+    console.log("Razorpay subscription created:", subscriptionData.id);
 
     return new Response(
       JSON.stringify({
-        orderId: orderData.id,
-        amount: orderData.amount,
-        currency: orderData.currency,
+        subscriptionId: subscriptionData.id,
         keyId: razorpayKeyId,
         prefill: {
           email: userEmail,
@@ -90,7 +88,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error creating Razorpay order:", error);
+    console.error("Error creating Razorpay subscription:", error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
