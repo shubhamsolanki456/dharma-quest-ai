@@ -100,7 +100,7 @@ serve(async (req) => {
         }, { onConflict: "user_id" });
     }
 
-    // Create Razorpay subscription
+    // Create Razorpay subscription (hosted link flow)
     const subscriptionResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
       method: "POST",
       headers: {
@@ -111,7 +111,10 @@ serve(async (req) => {
         plan_id: planId,
         customer_id: customerId,
         total_count: planType === "yearly" ? 10 : 12, // Number of billing cycles
-        customer_notify: 0, // We'll handle notifications
+        customer_notify: 1, // generate hosted link (short_url)
+        notify_info: {
+          notify_email: userEmail,
+        },
         notes: {
           plan_type: planType,
           user_id: userId,
@@ -126,11 +129,12 @@ serve(async (req) => {
     }
 
     const subscriptionData = await subscriptionResponse.json();
-    console.log("Razorpay subscription created:", subscriptionData.id);
+    console.log("Razorpay subscription created:", subscriptionData.id, "short_url:", subscriptionData.short_url);
 
     return new Response(
       JSON.stringify({
         subscriptionId: subscriptionData.id,
+        shortUrl: subscriptionData.short_url,
         keyId: razorpayKeyId,
         prefill: {
           email: userEmail,
