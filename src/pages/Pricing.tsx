@@ -86,17 +86,13 @@ const Pricing = () => {
 
     setSelectedPlan(planId);
 
-    // Initiate Razorpay payment
+    // Initiate Razorpay payment (hosted redirect flow)
     initiatePayment(
       planId as 'weekly' | 'monthly' | 'yearly',
       user.id,
       user.email || '',
       user.user_metadata?.full_name,
-      async () => {
-        // On success - refresh and redirect
-        await refetch();
-        window.location.href = `/payment-success?plan=${planId}`;
-      },
+      undefined,
       () => {
         // On failure - reset state
         setSelectedPlan(null);
