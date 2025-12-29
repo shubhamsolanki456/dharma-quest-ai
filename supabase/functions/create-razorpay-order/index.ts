@@ -131,7 +131,6 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         subscriptionId: subscriptionData.id,
-        shortUrl: subscriptionData.short_url || null,
         keyId: razorpayKeyId,
         prefill: {
           email: userEmail,

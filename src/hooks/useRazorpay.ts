@@ -58,7 +58,13 @@ export const useRazorpay = () => {
     setIsLoading(true);
 
     try {
-      // Create subscription via edge function (server side)
+      // Load Razorpay script
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Failed to load Razorpay. Please check your internet connection.');
+      }
+
+      // Create subscription via edge function
       const { data: subscriptionData, error: subscriptionError } = await supabase.functions.invoke(
         'create-razorpay-order',
         {
@@ -70,54 +76,24 @@ export const useRazorpay = () => {
         throw new Error(subscriptionData?.error || 'Failed to create subscription');
       }
 
-      // Store payment info for verification after redirect/callback
-      sessionStorage.setItem(
-        'razorpay_pending_payment',
-        JSON.stringify({
-          planType,
-          userId,
-          subscriptionId: subscriptionData.subscriptionId,
-        })
-      );
-
-      const redirectToUrl = (url: string) => {
-        try {
-          // If embedded, try top-level redirect; if blocked, fallback to a new tab.
-          if (window.top && window.top !== window.self) {
-            window.top.location.href = url;
-            return;
-          }
-          window.location.href = url;
-        } catch {
-          window.open(url, '_blank', 'noopener,noreferrer');
-        }
-      };
-
-      // Production-friendly path: redirect to Razorpay-hosted subscription URL.
-      // This avoids the "website does not match registered website(s)" restriction.
-      if (subscriptionData?.shortUrl) {
-        toast.message('Opening secure payment page…');
-        setIsLoading(false);
-        redirectToUrl(subscriptionData.shortUrl);
-        return;
-      }
-
-      // Fallback: Checkout.js (requires your domain to be whitelisted in Razorpay settings)
-      const scriptLoaded = await loadRazorpayScript();
-      if (!scriptLoaded) {
-        throw new Error('Failed to load Razorpay. Please check your internet connection.');
-      }
+      // Store payment info in sessionStorage for verification after redirect
+      sessionStorage.setItem('razorpay_pending_payment', JSON.stringify({
+        planType,
+        userId,
+        subscriptionId: subscriptionData.subscriptionId,
+      }));
 
       // Get the current origin for callback URL
       const callbackUrl = `${window.location.origin}/payment-success?plan=${planType}&subscription_id=${subscriptionData.subscriptionId}`;
 
+      // Configure Razorpay options with REDIRECT mode
       const options: RazorpaySubscriptionOptions = {
         key: subscriptionData.keyId,
         subscription_id: subscriptionData.subscriptionId,
         name: 'Dharma AI',
         description: `${planType.charAt(0).toUpperCase() + planType.slice(1)} Subscription`,
         callback_url: callbackUrl,
-        redirect: true,
+        redirect: true, // Enable redirect mode
         prefill: {
           email: subscriptionData.prefill.email,
           name: subscriptionData.prefill.name || '',
@@ -128,7 +104,7 @@ export const useRazorpay = () => {
       };
 
       const razorpay = new window.Razorpay(options);
-
+      
       razorpay.on('payment.failed', (response: { error: { description: string } }) => {
         const errorMessage = response.error?.description || 'Payment failed';
         toast.error(errorMessage);
@@ -137,7 +113,7 @@ export const useRazorpay = () => {
       });
 
       razorpay.open();
-
+      
       // Note: With redirect mode, the page will redirect to Razorpay
       // After payment, user will be redirected back to callback_url
       // The onSuccess callback won't be called here as the page navigates away
