@@ -7,12 +7,19 @@ const corsHeaders = {
 };
 
 interface VerifyRequest {
-  razorpay_order_id: string;
+  razorpay_subscription_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
   planType: 'weekly' | 'monthly' | 'yearly';
   userId: string;
 }
+
+// Razorpay Plan IDs
+const PLAN_IDS: Record<string, string> = {
+  weekly: "plan_RxMDmARDD8Dt24",
+  monthly: "plan_RxMEh5qs9fRzi4",
+  yearly: "plan_RxMEyMuVsT9bSU",
+};
 
 const PLAN_DURATIONS: Record<string, number> = {
   weekly: 7,
@@ -21,13 +28,13 @@ const PLAN_DURATIONS: Record<string, number> = {
 };
 
 async function verifySignature(
-  orderId: string,
+  subscriptionId: string,
   paymentId: string,
   signature: string,
   secret: string
 ): Promise<boolean> {
   const encoder = new TextEncoder();
-  const data = encoder.encode(`${orderId}|${paymentId}`);
+  const data = encoder.encode(`${paymentId}|${subscriptionId}`);
   const key = encoder.encode(secret);
   
   const cryptoKey = await crypto.subtle.importKey(
@@ -53,14 +60,14 @@ serve(async (req) => {
 
   try {
     const { 
-      razorpay_order_id, 
+      razorpay_subscription_id, 
       razorpay_payment_id, 
       razorpay_signature, 
       planType, 
       userId 
     } = await req.json() as VerifyRequest;
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !planType || !userId) {
+    if (!razorpay_subscription_id || !razorpay_payment_id || !razorpay_signature || !planType || !userId) {
       throw new Error("Missing required fields");
     }
 
@@ -69,9 +76,9 @@ serve(async (req) => {
       throw new Error("Razorpay secret not configured");
     }
 
-    // Verify signature
+    // Verify signature for subscription payments
     const isValid = await verifySignature(
-      razorpay_order_id,
+      razorpay_subscription_id,
       razorpay_payment_id,
       razorpay_signature,
       razorpayKeySecret
@@ -105,6 +112,8 @@ serve(async (req) => {
         subscription_end_date: endDate.toISOString(),
         is_active: true,
         razorpay_payment_id: razorpay_payment_id,
+        razorpay_subscription_id: razorpay_subscription_id,
+        razorpay_plan_id: PLAN_IDS[planType],
         updated_at: new Date().toISOString(),
       }, { 
         onConflict: "user_id" 
