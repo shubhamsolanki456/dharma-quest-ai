@@ -13,10 +13,11 @@ interface OrderRequest {
   userName?: string;
 }
 
-const PLAN_PRICES: Record<string, number> = {
-  weekly: 9900,    // ₹99 in paise
-  monthly: 19900,  // ₹199 in paise
-  yearly: 199900,  // ₹1999 in paise
+// Razorpay Plan IDs
+const PLAN_IDS: Record<string, string> = {
+  weekly: "plan_RxMDmARDD8Dt24",
+  monthly: "plan_RxMEh5qs9fRzi4",
+  yearly: "plan_RxMEyMuVsT9bSU",
 };
 
 serve(async (req) => {
@@ -31,8 +32,8 @@ serve(async (req) => {
       throw new Error("Missing required fields: planType, userId, or userEmail");
     }
 
-    const amount = PLAN_PRICES[planType];
-    if (!amount) {
+    const planId = PLAN_IDS[planType];
+    if (!planId) {
       throw new Error(`Invalid plan type: ${planType}`);
     }
 
@@ -43,40 +44,93 @@ serve(async (req) => {
       throw new Error("Razorpay credentials not configured");
     }
 
-    // Create Razorpay order
-    const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
+    const authHeader = `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`;
+
+    // First, create or get customer
+    let customerId: string;
+
+    // Check if user already has a customer ID in our database
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: existingSubscription } = await supabase
+      .from("user_subscriptions")
+      .select("razorpay_customer_id")
+      .eq("user_id", userId)
+      .single();
+
+    if (existingSubscription?.razorpay_customer_id) {
+      customerId = existingSubscription.razorpay_customer_id;
+      console.log("Using existing customer:", customerId);
+    } else {
+      // Create new Razorpay customer
+      const customerResponse = await fetch("https://api.razorpay.com/v1/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": authHeader,
+        },
+        body: JSON.stringify({
+          name: userName || userEmail.split("@")[0],
+          email: userEmail,
+          notes: {
+            user_id: userId,
+          },
+        }),
+      });
+
+      if (!customerResponse.ok) {
+        const errorData = await customerResponse.text();
+        console.error("Failed to create customer:", errorData);
+        throw new Error("Failed to create Razorpay customer");
+      }
+
+      const customerData = await customerResponse.json();
+      customerId = customerData.id;
+      console.log("Created new customer:", customerId);
+
+      // Save customer ID to database
+      await supabase
+        .from("user_subscriptions")
+        .upsert({
+          user_id: userId,
+          razorpay_customer_id: customerId,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id" });
+    }
+
+    // Create Razorpay subscription
+    const subscriptionResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`,
+        "Authorization": authHeader,
       },
       body: JSON.stringify({
-        amount: amount,
-        currency: "INR",
-        receipt: `order_${userId}_${Date.now()}`,
+        plan_id: planId,
+        customer_id: customerId,
+        total_count: planType === "yearly" ? 10 : 12, // Number of billing cycles
+        customer_notify: 0, // We'll handle notifications
         notes: {
           plan_type: planType,
           user_id: userId,
-          user_email: userEmail,
         },
       }),
     });
 
-    if (!orderResponse.ok) {
-      const errorData = await orderResponse.text();
-      console.error("Razorpay API error:", errorData);
-      throw new Error(`Failed to create Razorpay order: ${orderResponse.status}`);
+    if (!subscriptionResponse.ok) {
+      const errorData = await subscriptionResponse.text();
+      console.error("Razorpay subscription error:", errorData);
+      throw new Error(`Failed to create Razorpay subscription: ${subscriptionResponse.status}`);
     }
 
-    const orderData = await orderResponse.json();
-
-    console.log("Razorpay order created:", orderData.id);
+    const subscriptionData = await subscriptionResponse.json();
+    console.log("Razorpay subscription created:", subscriptionData.id);
 
     return new Response(
       JSON.stringify({
-        orderId: orderData.id,
-        amount: orderData.amount,
-        currency: orderData.currency,
+        subscriptionId: subscriptionData.id,
         keyId: razorpayKeyId,
         prefill: {
           email: userEmail,
@@ -90,7 +144,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error creating Razorpay order:", error);
+    console.error("Error creating Razorpay subscription:", error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
