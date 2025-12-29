@@ -13,11 +13,18 @@ interface OrderRequest {
   userName?: string;
 }
 
-// Razorpay Plan IDs
-const PLAN_IDS: Record<string, string> = {
-  weekly: "plan_RxMDmARDD8Dt24",
-  monthly: "plan_RxMEh5qs9fRzi4",
-  yearly: "plan_RxMEyMuVsT9bSU",
+// Plan amounts in paise (smallest currency unit)
+const PLAN_AMOUNTS: Record<string, number> = {
+  weekly: 9900,      // ₹99
+  monthly: 19900,    // ₹199
+  yearly: 199900,    // ₹1999
+};
+
+// Plan display names for receipt
+const PLAN_NAMES: Record<string, string> = {
+  weekly: "Weekly Plan",
+  monthly: "Monthly Plan",
+  yearly: "Yearly Plan",
 };
 
 serve(async (req) => {
@@ -32,8 +39,8 @@ serve(async (req) => {
       throw new Error("Missing required fields: planType, userId, or userEmail");
     }
 
-    const planId = PLAN_IDS[planType];
-    if (!planId) {
+    const amount = PLAN_AMOUNTS[planType];
+    if (!amount) {
       throw new Error(`Invalid plan type: ${planType}`);
     }
 
@@ -46,96 +53,59 @@ serve(async (req) => {
 
     const authHeader = `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`;
 
-    // First, create or get customer
-    let customerId: string;
-
-    // Check if user already has a customer ID in our database
+    // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: existingSubscription } = await supabase
-      .from("user_subscriptions")
-      .select("razorpay_customer_id")
-      .eq("user_id", userId)
-      .single();
+    // Generate unique receipt ID
+    const receiptId = `rcpt_${Date.now()}_${userId.slice(0, 8)}`;
 
-    if (existingSubscription?.razorpay_customer_id) {
-      customerId = existingSubscription.razorpay_customer_id;
-      console.log("Using existing customer:", customerId);
-    } else {
-      // Create new Razorpay customer
-      const customerResponse = await fetch("https://api.razorpay.com/v1/customers", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": authHeader,
-        },
-        body: JSON.stringify({
-          name: userName || userEmail.split("@")[0],
-          email: userEmail,
-          notes: {
-            user_id: userId,
-          },
-        }),
-      });
-
-      if (!customerResponse.ok) {
-        const errorData = await customerResponse.text();
-        console.error("Failed to create customer:", errorData);
-        throw new Error("Failed to create Razorpay customer");
-      }
-
-      const customerData = await customerResponse.json();
-      customerId = customerData.id;
-      console.log("Created new customer:", customerId);
-
-      // Save customer ID to database
-      await supabase
-        .from("user_subscriptions")
-        .upsert({
-          user_id: userId,
-          razorpay_customer_id: customerId,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
-    }
-
-    // Create Razorpay subscription (hosted link flow)
-    const subscriptionResponse = await fetch("https://api.razorpay.com/v1/subscriptions", {
+    // Create Razorpay Order (as per Standard Checkout docs)
+    console.log("Creating Razorpay order for:", { planType, amount, userId });
+    
+    const orderResponse = await fetch("https://api.razorpay.com/v1/orders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": authHeader,
       },
       body: JSON.stringify({
-        plan_id: planId,
-        customer_id: customerId,
-        total_count: planType === "yearly" ? 10 : 12, // Number of billing cycles
-        customer_notify: 1, // generate hosted link (short_url)
-        notify_info: {
-          notify_email: userEmail,
-        },
+        amount: amount,
+        currency: "INR",
+        receipt: receiptId,
         notes: {
           plan_type: planType,
           user_id: userId,
+          user_email: userEmail,
         },
       }),
     });
 
-    if (!subscriptionResponse.ok) {
-      const errorData = await subscriptionResponse.text();
-      console.error("Razorpay subscription error:", errorData);
-      throw new Error(`Failed to create Razorpay subscription: ${subscriptionResponse.status}`);
+    if (!orderResponse.ok) {
+      const errorData = await orderResponse.text();
+      console.error("Razorpay order creation error:", errorData);
+      throw new Error(`Failed to create Razorpay order: ${orderResponse.status}`);
     }
 
-    const subscriptionData = await subscriptionResponse.json();
-    console.log("Razorpay subscription created:", subscriptionData.id, "short_url:", subscriptionData.short_url);
+    const orderData = await orderResponse.json();
+    console.log("Razorpay order created:", orderData.id);
+
+    // Store the order in database for later verification
+    await supabase
+      .from("user_subscriptions")
+      .upsert({
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
 
     return new Response(
       JSON.stringify({
-        subscriptionId: subscriptionData.id,
-        shortUrl: subscriptionData.short_url,
+        orderId: orderData.id,
+        amount: orderData.amount,
+        currency: orderData.currency,
         keyId: razorpayKeyId,
+        planName: PLAN_NAMES[planType],
         prefill: {
           email: userEmail,
           name: userName || "",
@@ -148,7 +118,7 @@ serve(async (req) => {
     );
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error creating Razorpay subscription:", error);
+    console.error("Error creating Razorpay order:", error);
     return new Response(
       JSON.stringify({ error: errorMessage }),
       {
