@@ -13,8 +13,10 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planType = searchParams.get('plan') || 'monthly';
+  
+  // Razorpay redirect params (Standard Checkout)
   const razorpayPaymentId = searchParams.get('razorpay_payment_id');
-  const razorpaySubscriptionId = searchParams.get('razorpay_subscription_id') || searchParams.get('subscription_id');
+  const razorpayOrderId = searchParams.get('razorpay_order_id');
   const razorpaySignature = searchParams.get('razorpay_signature');
   
   const [showContent, setShowContent] = useState(false);
@@ -32,7 +34,7 @@ const PaymentSuccess = () => {
   useEffect(() => {
     const verifyPayment = async () => {
       // If we have Razorpay redirect params, verify the payment
-      if (razorpayPaymentId && razorpaySubscriptionId && razorpaySignature) {
+      if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
         setIsVerifying(true);
         
         try {
@@ -57,12 +59,14 @@ const PaymentSuccess = () => {
             throw new Error('User not found. Please try again.');
           }
 
+          console.log('Verifying payment:', { razorpayOrderId, razorpayPaymentId, storedPlanType, userId });
+
           // Verify payment via edge function
           const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
             'verify-razorpay-payment',
             {
               body: {
-                razorpay_subscription_id: razorpaySubscriptionId,
+                razorpay_order_id: razorpayOrderId,
                 razorpay_payment_id: razorpayPaymentId,
                 razorpay_signature: razorpaySignature,
                 planType: storedPlanType,
@@ -91,12 +95,11 @@ const PaymentSuccess = () => {
           setIsVerifying(false);
         }
       } else {
-        // No redirect params, payment was probably verified in the modal handler
-        // or this is a direct navigation
+        // No redirect params - direct navigation or already verified
         setVerificationComplete(true);
       }
 
-      // Mark trial as activated (user now has premium)
+      // Mark as activated
       localStorage.setItem('trial_activated', 'true');
       
       // Refresh subscription state
@@ -111,10 +114,9 @@ const PaymentSuccess = () => {
     };
 
     verifyPayment();
-  }, [razorpayPaymentId, razorpaySubscriptionId, razorpaySignature, planType, refetch]);
+  }, [razorpayPaymentId, razorpayOrderId, razorpaySignature, planType, refetch]);
 
   const handleContinue = () => {
-    // Use hard navigation to ensure clean state
     window.location.href = '/dashboard';
   };
 
@@ -132,10 +134,8 @@ const PaymentSuccess = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Confetti Animation */}
       {showConfetti && <Confetti />}
       
-      {/* Background glow effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           className="absolute top-1/4 left-1/4 w-64 h-64 bg-saffron/20 rounded-full blur-3xl"
@@ -156,7 +156,6 @@ const PaymentSuccess = () => {
           transition={{ duration: 0.5, type: "spring" }}
           className="w-full max-w-md relative z-10"
         >
-          {/* Success Icon */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -185,9 +184,7 @@ const PaymentSuccess = () => {
             className="text-center mb-6"
           >
             <h1 className="text-3xl md:text-4xl font-display mb-3">
-              <span className="text-gradient-saffron">
-                Welcome to Premium!
-              </span>
+              <span className="text-gradient-saffron">Welcome to Premium!</span>
             </h1>
             <p className="text-muted-foreground">
               Your {planNames[planType]} plan is now active
@@ -195,7 +192,6 @@ const PaymentSuccess = () => {
           </motion.div>
 
           <Card className="card-3d-subtle p-6 bg-gradient-to-br from-saffron/10 to-dharma/10 border-saffron/30">
-            {/* What's unlocked */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2 mb-4">
                 <Sparkles className="h-5 w-5 text-saffron" />
@@ -225,7 +221,6 @@ const PaymentSuccess = () => {
               </div>
             </div>
 
-            {/* Continue Button */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
