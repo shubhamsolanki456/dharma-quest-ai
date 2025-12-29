@@ -7,6 +7,8 @@ interface RazorpaySubscriptionOptions {
   subscription_id: string;
   name: string;
   description: string;
+  callback_url: string;
+  redirect: boolean;
   prefill: {
     email: string;
     name: string;
@@ -14,16 +16,6 @@ interface RazorpaySubscriptionOptions {
   theme: {
     color: string;
   };
-  handler: (response: RazorpaySubscriptionResponse) => void;
-  modal: {
-    ondismiss: () => void;
-  };
-}
-
-interface RazorpaySubscriptionResponse {
-  razorpay_subscription_id: string;
-  razorpay_payment_id: string;
-  razorpay_signature: string;
 }
 
 interface RazorpayInstance {
@@ -84,77 +76,56 @@ export const useRazorpay = () => {
         throw new Error(subscriptionData?.error || 'Failed to create subscription');
       }
 
-      // Configure Razorpay options for subscription
+      // Store payment info in sessionStorage for verification after redirect
+      sessionStorage.setItem('razorpay_pending_payment', JSON.stringify({
+        planType,
+        userId,
+        subscriptionId: subscriptionData.subscriptionId,
+      }));
+
+      // Get the current origin for callback URL
+      const callbackUrl = `${window.location.origin}/payment-success?plan=${planType}&subscription_id=${subscriptionData.subscriptionId}`;
+
+      // Configure Razorpay options with REDIRECT mode
       const options: RazorpaySubscriptionOptions = {
         key: subscriptionData.keyId,
         subscription_id: subscriptionData.subscriptionId,
         name: 'Dharma AI',
         description: `${planType.charAt(0).toUpperCase() + planType.slice(1)} Subscription`,
+        callback_url: callbackUrl,
+        redirect: true, // Enable redirect mode
         prefill: {
           email: subscriptionData.prefill.email,
           name: subscriptionData.prefill.name || '',
         },
         theme: {
-          color: '#FF6B00', // Saffron color
-        },
-        handler: async (response: RazorpaySubscriptionResponse) => {
-          try {
-            // Verify payment via edge function
-            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-              'verify-razorpay-payment',
-              {
-                body: {
-                  razorpay_subscription_id: response.razorpay_subscription_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  planType,
-                  userId,
-                },
-              }
-            );
-
-            if (verifyError || !verifyData?.success) {
-              throw new Error(verifyData?.error || 'Payment verification failed');
-            }
-
-            toast.success('Subscription activated successfully!');
-            onSuccess?.();
-          } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
-            toast.error(errorMessage);
-            onFailure?.(errorMessage);
-          } finally {
-            setIsLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setIsLoading(false);
-            toast.info('Payment cancelled');
-          },
+          color: '#FF6B00',
         },
       };
 
       const razorpay = new window.Razorpay(options);
       
       razorpay.on('payment.failed', (response: { error: { description: string } }) => {
-        setIsLoading(false);
-        const errorMessage = response.error.description || 'Payment failed';
+        const errorMessage = response.error?.description || 'Payment failed';
         toast.error(errorMessage);
         onFailure?.(errorMessage);
+        setIsLoading(false);
       });
 
       razorpay.open();
+      
+      // Note: With redirect mode, the page will redirect to Razorpay
+      // After payment, user will be redirected back to callback_url
+      // The onSuccess callback won't be called here as the page navigates away
+
     } catch (error) {
-      setIsLoading(false);
-      const errorMessage = error instanceof Error ? error.message : 'Something went wrong';
+      const errorMessage = error instanceof Error ? error.message : 'Payment initiation failed';
+      console.error('Payment error:', error);
       toast.error(errorMessage);
       onFailure?.(errorMessage);
+      setIsLoading(false);
     }
   }, [loadRazorpayScript]);
 
-  return {
-    initiatePayment,
-    isLoading,
-  };
+  return { initiatePayment, isLoading };
 };

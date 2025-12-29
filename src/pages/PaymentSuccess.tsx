@@ -3,16 +3,24 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CheckCircle, Crown, ArrowRight, Sparkles } from 'lucide-react';
+import { CheckCircle, Crown, ArrowRight, Sparkles, Loader2 } from 'lucide-react';
 import { Confetti } from '@/components/Confetti';
 import { useSubscription } from '@/hooks/useSubscription';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planType = searchParams.get('plan') || 'monthly';
+  const razorpayPaymentId = searchParams.get('razorpay_payment_id');
+  const razorpaySubscriptionId = searchParams.get('razorpay_subscription_id') || searchParams.get('subscription_id');
+  const razorpaySignature = searchParams.get('razorpay_signature');
+  
   const [showContent, setShowContent] = useState(false);
-  const [showConfetti, setShowConfetti] = useState(true);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationComplete, setVerificationComplete] = useState(false);
   const { refetch } = useSubscription();
 
   const planNames: Record<string, string> = {
@@ -22,23 +30,105 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
-    // Mark trial as activated (user now has premium)
-    localStorage.setItem('trial_activated', 'true');
-    
-    // Refresh subscription state
-    refetch();
-    
-    // Show content after a small delay
-    setTimeout(() => setShowContent(true), 500);
-    
-    // Hide confetti after animation
-    setTimeout(() => setShowConfetti(false), 5000);
-  }, [refetch]);
+    const verifyPayment = async () => {
+      // If we have Razorpay redirect params, verify the payment
+      if (razorpayPaymentId && razorpaySubscriptionId && razorpaySignature) {
+        setIsVerifying(true);
+        
+        try {
+          // Get stored payment info
+          const pendingPayment = sessionStorage.getItem('razorpay_pending_payment');
+          let userId = '';
+          let storedPlanType = planType;
+          
+          if (pendingPayment) {
+            const parsed = JSON.parse(pendingPayment);
+            userId = parsed.userId;
+            storedPlanType = parsed.planType || planType;
+          } else {
+            // Try to get user from auth
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              userId = user.id;
+            }
+          }
+
+          if (!userId) {
+            throw new Error('User not found. Please try again.');
+          }
+
+          // Verify payment via edge function
+          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+            'verify-razorpay-payment',
+            {
+              body: {
+                razorpay_subscription_id: razorpaySubscriptionId,
+                razorpay_payment_id: razorpayPaymentId,
+                razorpay_signature: razorpaySignature,
+                planType: storedPlanType,
+                userId,
+              },
+            }
+          );
+
+          if (verifyError || !verifyData?.success) {
+            throw new Error(verifyData?.error || 'Payment verification failed');
+          }
+
+          // Clear stored payment info
+          sessionStorage.removeItem('razorpay_pending_payment');
+          
+          // Payment verified successfully
+          setVerificationComplete(true);
+          toast.success('Payment verified successfully!');
+          
+        } catch (error) {
+          console.error('Payment verification error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
+          toast.error(errorMessage);
+          // Still show the page but indicate there might be an issue
+        } finally {
+          setIsVerifying(false);
+        }
+      } else {
+        // No redirect params, payment was probably verified in the modal handler
+        // or this is a direct navigation
+        setVerificationComplete(true);
+      }
+
+      // Mark trial as activated (user now has premium)
+      localStorage.setItem('trial_activated', 'true');
+      
+      // Refresh subscription state
+      await refetch();
+      
+      // Show content after verification
+      setTimeout(() => setShowContent(true), 500);
+      setShowConfetti(true);
+      
+      // Hide confetti after animation
+      setTimeout(() => setShowConfetti(false), 5000);
+    };
+
+    verifyPayment();
+  }, [razorpayPaymentId, razorpaySubscriptionId, razorpaySignature, planType, refetch]);
 
   const handleContinue = () => {
     // Use hard navigation to ensure clean state
     window.location.href = '/dashboard';
   };
+
+  if (isVerifying) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4">
+        <Card className="p-8 text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-saffron mx-auto mb-4" />
+          <h2 className="text-xl font-display mb-2">Verifying Payment</h2>
+          <p className="text-muted-foreground">Please wait while we confirm your subscription...</p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4 relative overflow-hidden">
