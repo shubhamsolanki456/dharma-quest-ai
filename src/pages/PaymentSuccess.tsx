@@ -13,11 +13,8 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planType = searchParams.get('plan') || 'monthly';
-  
-  // Razorpay redirect params (Standard Checkout)
-  const razorpayPaymentId = searchParams.get('razorpay_payment_id');
-  const razorpayOrderId = searchParams.get('razorpay_order_id');
-  const razorpaySignature = searchParams.get('razorpay_signature');
+  // Subscription flow (new) – subscriptionId is passed
+  const subscriptionId = searchParams.get('subscription_id');
   
   const [showContent, setShowContent] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -32,95 +29,75 @@ const PaymentSuccess = () => {
   };
 
   useEffect(() => {
-    const verifyPayment = async () => {
-      // If we have Razorpay redirect params, verify the payment
-      if (razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+    const confirmSubscription = async () => {
+      // Subscription flow: webhook handles DB update. We poll for confirmation.
+      if (subscriptionId) {
         setIsVerifying(true);
         
         try {
-          // Get stored payment info
-          const pendingPayment = sessionStorage.getItem('razorpay_pending_payment');
-          let userId = '';
-          let storedPlanType = planType;
-          
-          if (pendingPayment) {
-            const parsed = JSON.parse(pendingPayment);
-            userId = parsed.userId;
-            storedPlanType = parsed.planType || planType;
-          } else {
-            // Try to get user from auth
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-              userId = user.id;
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user) {
+            throw new Error('User not found. Please log in again.');
+          }
+
+          // Poll for subscription activation (webhook may take a few seconds)
+          let attempts = 0;
+          const maxAttempts = 10;
+          let activated = false;
+
+          while (attempts < maxAttempts && !activated) {
+            const { data: sub } = await supabase
+              .from('user_subscriptions')
+              .select('is_active, subscription_end_date')
+              .eq('user_id', user.id)
+              .maybeSingle();
+
+            if (sub?.is_active && sub?.subscription_end_date) {
+              activated = true;
+              break;
             }
+
+            attempts++;
+            await new Promise(r => setTimeout(r, 1500));
           }
 
-          if (!userId) {
-            throw new Error('User not found. Please try again.');
-          }
-
-          console.log('Verifying payment:', { razorpayOrderId, razorpayPaymentId, storedPlanType, userId });
-
-          // Verify payment via edge function
-          const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
-            'verify-razorpay-payment',
-            {
-              body: {
-                razorpay_order_id: razorpayOrderId,
-                razorpay_payment_id: razorpayPaymentId,
-                razorpay_signature: razorpaySignature,
-                planType: storedPlanType,
-                userId,
-              },
-            }
-          );
-
-          if (verifyError || !verifyData?.success) {
-            throw new Error(verifyData?.error || 'Payment verification failed');
-          }
-
-          // Clear stored payment info
           sessionStorage.removeItem('razorpay_pending_payment');
-          
-          // IMPORTANT: Also set trial_activated for backwards compatibility
-          // This ensures the routing logic doesn't redirect to start-free-trial
           localStorage.setItem('trial_activated', 'true');
-          
-          // Payment verified successfully
-          setVerificationComplete(true);
-          toast.success('Payment verified successfully!');
-          
-          // Refresh subscription state immediately
+
+          if (activated) {
+            setVerificationComplete(true);
+            toast.success('Subscription activated!');
+          } else {
+            // Webhook may still be processing – let user proceed anyway
+            setVerificationComplete(true);
+            toast.info('Your subscription is being activated. This may take a moment.');
+          }
+
           await refetch();
-          
         } catch (error) {
-          console.error('Payment verification error:', error);
-          const errorMessage = error instanceof Error ? error.message : 'Payment verification failed';
+          console.error('Subscription confirmation error:', error);
+          const errorMessage = error instanceof Error ? error.message : 'Error confirming subscription';
           toast.error(errorMessage);
-          // Still show the page but indicate there might be an issue
         } finally {
           setIsVerifying(false);
         }
       } else {
-        // No redirect params - direct navigation or already verified
+        // Direct navigation or legacy one-time flow fallback
         setVerificationComplete(true);
         localStorage.setItem('trial_activated', 'true');
         await refetch();
       }
 
-      // Show content after verification
+      // Show content after verification/wait
       setTimeout(() => setShowContent(true), 500);
       setShowConfetti(true);
-      
-      // Hide confetti after animation
       setTimeout(() => setShowConfetti(false), 5000);
     };
 
-    verifyPayment();
-  }, [razorpayPaymentId, razorpayOrderId, razorpaySignature, planType, refetch]);
+    confirmSubscription();
+  }, [subscriptionId, planType, refetch]);
 
   const handleContinue = () => {
-    // Use navigate for SPA routing instead of full page reload
     navigate('/dashboard');
   };
 
@@ -129,7 +106,7 @@ const PaymentSuccess = () => {
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 flex items-center justify-center p-4">
         <Card className="p-8 text-center">
           <Loader2 className="h-12 w-12 animate-spin text-saffron mx-auto mb-4" />
-          <h2 className="text-xl font-display mb-2">Verifying Payment</h2>
+          <h2 className="text-xl font-display mb-2">Activating Subscription</h2>
           <p className="text-muted-foreground">Please wait while we confirm your subscription...</p>
         </Card>
       </div>
