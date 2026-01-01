@@ -82,9 +82,16 @@ const PaymentSuccess = () => {
           // Clear stored payment info
           sessionStorage.removeItem('razorpay_pending_payment');
           
+          // IMPORTANT: Also set trial_activated for backwards compatibility
+          // This ensures the routing logic doesn't redirect to start-free-trial
+          localStorage.setItem('trial_activated', 'true');
+          
           // Payment verified successfully
           setVerificationComplete(true);
           toast.success('Payment verified successfully!');
+          
+          // Refresh subscription state immediately
+          await refetch();
           
         } catch (error) {
           console.error('Payment verification error:', error);
@@ -97,14 +104,10 @@ const PaymentSuccess = () => {
       } else {
         // No redirect params - direct navigation or already verified
         setVerificationComplete(true);
+        localStorage.setItem('trial_activated', 'true');
+        await refetch();
       }
 
-      // Mark as activated
-      localStorage.setItem('trial_activated', 'true');
-      
-      // Refresh subscription state
-      await refetch();
-      
       // Show content after verification
       setTimeout(() => setShowContent(true), 500);
       setShowConfetti(true);
@@ -117,7 +120,8 @@ const PaymentSuccess = () => {
   }, [razorpayPaymentId, razorpayOrderId, razorpaySignature, planType, refetch]);
 
   const handleContinue = () => {
-    window.location.href = '/dashboard';
+    // Use navigate for SPA routing instead of full page reload
+    navigate('/dashboard');
   };
 
   if (isVerifying) {

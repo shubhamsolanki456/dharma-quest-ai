@@ -140,6 +140,12 @@ export const useSubscription = () => {
     return new Date() > subEnd;
   };
 
+  // Check if user has a PAID subscription (not trial)
+  const isPaidSubscriber = (): boolean => {
+    if (!subscription) return false;
+    return subscription.plan_type !== 'trial';
+  };
+
   const hasActiveAccess = (): boolean => {
     if (!subscription) return false;
     if (!subscription.is_active) return false;
@@ -148,6 +154,7 @@ export const useSubscription = () => {
       return !isTrialExpired();
     }
     
+    // For paid plans, check if subscription is still valid
     return !isSubscriptionExpired();
   };
 
@@ -205,6 +212,7 @@ export const useSubscription = () => {
     isTrialExpired,
     isSubscriptionExpired,
     hasActiveAccess,
+    isPaidSubscriber,
     getDaysRemaining,
     isCancelled,
     refetch: fetchSubscription

@@ -5,16 +5,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useProfile } from '@/hooks/useProfile';
 import Landing from './Landing';
 
-// Helper function to check if trial has expired
-const isTrialExpired = (subscription: any): boolean => {
-  if (!subscription?.trial_end_date) return false;
-  if (subscription.plan_type !== 'trial') return false;
-  return new Date(subscription.trial_end_date) < new Date();
-};
-
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
-  const { subscription, loading: subLoading, hasActiveAccess, isSubscriptionExpired } = useSubscription();
+  const { subscription, loading: subLoading, hasActiveAccess, isPaidSubscriber } = useSubscription();
   const { profile, loading: profileLoading } = useProfile();
   const navigate = useNavigate();
 
@@ -44,28 +37,42 @@ const Index = () => {
       return;
     }
 
-    // SCENARIO 5: Completed onboarding but hasn't activated free trial → Go to Activate Trial
-    const trialActivated = localStorage.getItem('trial_activated') === 'true';
-    if (!trialActivated) {
-      navigate('/start-free-trial');
-      return;
-    }
-
-    // SCENARIO 6: Has trial/premium but trial has EXPIRED → Go to Pricing/Paywall
-    if (isTrialExpired(subscription) || isSubscriptionExpired()) {
-      navigate('/pricing');
-      return;
-    }
-
-    // SCENARIO 7: Everything is good (completed onboarding + active trial/premium) → Dashboard
-    if (hasActiveAccess()) {
+    // SCENARIO 5: Paid subscriber with active access → Dashboard
+    if (isPaidSubscriber() && hasActiveAccess()) {
       navigate('/dashboard');
       return;
     }
 
-    // Default fallback: show pricing
-    navigate('/pricing');
-  }, [user, profile, subscription, authLoading, subLoading, profileLoading, navigate, hasActiveAccess, isSubscriptionExpired]);
+    // SCENARIO 6: Trial user flow
+    if (subscription.plan_type === 'trial') {
+      const trialActivated = localStorage.getItem('trial_activated') === 'true';
+      
+      // Trial not activated → Start Free Trial page
+      if (!trialActivated) {
+        navigate('/start-free-trial');
+        return;
+      }
+      
+      // Trial activated and active → Dashboard
+      if (hasActiveAccess()) {
+        navigate('/dashboard');
+        return;
+      }
+      
+      // Trial expired → Pricing
+      navigate('/pricing');
+      return;
+    }
+
+    // SCENARIO 7: Paid subscription expired → Pricing
+    if (!hasActiveAccess()) {
+      navigate('/pricing');
+      return;
+    }
+
+    // Default: Dashboard
+    navigate('/dashboard');
+  }, [user, profile, subscription, authLoading, subLoading, profileLoading, navigate, hasActiveAccess, isPaidSubscriber]);
 
   // Show loading while checking auth and profile
   if (authLoading || subLoading || profileLoading) {
