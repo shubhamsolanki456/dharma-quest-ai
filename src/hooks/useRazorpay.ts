@@ -4,20 +4,11 @@ import { toast } from 'sonner';
 
 type PlanType = 'weekly' | 'monthly' | 'yearly';
 
-interface RazorpayResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
-
-interface RazorpayOptions {
+interface RazorpaySubscriptionOptions {
   key: string;
-  amount: number;
-  currency: string;
+  subscription_id: string;
   name: string;
   description: string;
-  order_id: string;
-  callback_url: string;
   prefill: {
     email: string;
     name: string;
@@ -29,10 +20,16 @@ interface RazorpayOptions {
   theme: {
     color: string;
   };
+  handler?: (response: RazorpaySubscriptionResponse) => void;
   modal?: {
     ondismiss?: () => void;
   };
-  redirect: boolean;
+}
+
+interface RazorpaySubscriptionResponse {
+  razorpay_payment_id: string;
+  razorpay_subscription_id: string;
+  razorpay_signature: string;
 }
 
 interface RazorpayInstance {
@@ -42,7 +39,7 @@ interface RazorpayInstance {
 
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+    Razorpay: new (options: RazorpaySubscriptionOptions) => RazorpayInstance;
   }
 }
 
@@ -88,41 +85,37 @@ export const useRazorpay = () => {
           throw new Error('Failed to load payment gateway');
         }
 
-        // Create order via backend
-        const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        // Create subscription via backend
+        const { data, error } = await supabase.functions.invoke('create-razorpay-subscription', {
           body: { planType, userId, userEmail, userName },
         });
 
         if (error) {
-          throw new Error(error.message || 'Failed to create order');
+          throw new Error(error.message || 'Failed to create subscription');
         }
 
-        if (!data?.orderId) {
-          throw new Error(data?.error || 'Failed to create order');
+        if (!data?.subscriptionId) {
+          throw new Error(data?.error || 'Failed to create subscription');
         }
 
-        // Store payment info for verification after redirect
+        // Store subscription info for verification after payment
         sessionStorage.setItem(
           'razorpay_pending_payment',
           JSON.stringify({
             planType,
             userId,
-            orderId: data.orderId,
+            subscriptionId: data.subscriptionId,
           })
         );
 
-        // Get current origin for callback URL
-        const callbackUrl = `${window.location.origin}/payment-success?plan=${planType}`;
+        console.log('Opening Razorpay checkout for subscription:', data.subscriptionId);
 
-        // Configure Razorpay Standard Checkout with redirect
-        const options: RazorpayOptions = {
+        // Configure Razorpay Subscription Checkout
+        const options: RazorpaySubscriptionOptions = {
           key: data.keyId,
-          amount: data.amount,
-          currency: data.currency,
+          subscription_id: data.subscriptionId,
           name: 'Dharma AI',
           description: data.planName,
-          order_id: data.orderId,
-          callback_url: callbackUrl,
           prefill: {
             email: data.prefill.email,
             name: data.prefill.name,
@@ -134,10 +127,24 @@ export const useRazorpay = () => {
           theme: {
             color: '#FF9933', // Saffron color
           },
-          redirect: true, // Force redirect mode
-        };
+          handler: async (response: RazorpaySubscriptionResponse) => {
+            console.log('Payment successful:', response);
+            toast.success('Payment successful! Activating your subscription...');
+            sessionStorage.removeItem('razorpay_pending_payment');
+            localStorage.setItem('trial_activated', 'true');
 
-        console.log('Opening Razorpay checkout with redirect mode');
+            // The webhook will activate the subscription in DB.
+            // Navigate user to payment success page for confirmation.
+            window.location.href = `/payment-success?plan=${planType}&subscription_id=${response.razorpay_subscription_id}`;
+          },
+          modal: {
+            ondismiss: () => {
+              console.log('Razorpay modal dismissed');
+              setIsLoading(false);
+              onFailure?.('Payment cancelled');
+            },
+          },
+        };
 
         // Open Razorpay checkout
         const razorpay = new window.Razorpay(options);
