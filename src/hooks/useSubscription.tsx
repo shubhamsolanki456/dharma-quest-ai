@@ -148,13 +148,13 @@ export const useSubscription = () => {
 
   const hasActiveAccess = (): boolean => {
     if (!subscription) return false;
-    if (!subscription.is_active) return false;
-    
+
+    // Trial access requires active trial + not expired
     if (subscription.plan_type === 'trial') {
-      return !isTrialExpired();
+      return subscription.is_active && !isTrialExpired();
     }
-    
-    // For paid plans, check if subscription is still valid
+
+    // Paid access is based on time validity (cancellation should NOT remove access immediately)
     return !isSubscriptionExpired();
   };
 

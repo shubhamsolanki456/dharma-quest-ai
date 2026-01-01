@@ -85,6 +85,7 @@ const Profile = () => {
       toast.success("Subscription cancelled", {
         description: "Your subscription will remain active until the end of your current billing period."
       });
+      navigate('/pricing');
     } else {
       toast.error("Failed to cancel subscription", {
         description: "Please try again or contact support."
