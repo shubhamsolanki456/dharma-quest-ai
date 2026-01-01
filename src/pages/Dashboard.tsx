@@ -48,19 +48,28 @@ const allQuests = [
   { id: 10, title: 'Serve Someone', description: 'Help a family member or stranger without being asked', points: 35 },
 ];
 
+// Seeded random number generator for consistent results
+const seededRandom = (seed: number) => {
+  const x = Math.sin(seed++) * 10000;
+  return x - Math.floor(x);
+};
+
 // Get 3 random quests for today (seeded by IST date for consistency)
 const getRandomQuests = (dateStr: string) => {
+  // Create a stable seed from date string
   let seed = 0;
   for (let i = 0; i < dateStr.length; i++) {
-    seed += dateStr.charCodeAt(i);
+    seed = seed * 31 + dateStr.charCodeAt(i);
   }
   
-  const shuffled = [...allQuests].sort(() => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280 - 0.5;
-  });
+  // Fisher-Yates shuffle with seeded random for true consistency
+  const questsCopy = [...allQuests];
+  for (let i = questsCopy.length - 1; i > 0; i--) {
+    const j = Math.floor(seededRandom(seed + i) * (i + 1));
+    [questsCopy[i], questsCopy[j]] = [questsCopy[j], questsCopy[i]];
+  }
   
-  return shuffled.slice(0, 3);
+  return questsCopy.slice(0, 3);
 };
 
 const Dashboard = () => {
