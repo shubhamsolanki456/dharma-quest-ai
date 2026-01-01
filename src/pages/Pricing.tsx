@@ -13,7 +13,7 @@ const Pricing = () => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { subscription, hasActiveAccess, getDaysRemaining, refetch } = useSubscription();
+  const { subscription, hasActiveAccess, getDaysRemaining, isCancelled } = useSubscription();
   const { initiatePayment, isLoading } = useRazorpay();
 
   const plans = [
@@ -102,6 +102,7 @@ const Pricing = () => {
 
   const isTrialActive = subscription?.plan_type === 'trial' && hasActiveAccess();
   const trialDaysRemaining = isTrialActive ? getDaysRemaining() : 0;
+  const cancelledButActive = !!subscription && subscription.plan_type !== 'trial' && isCancelled() && hasActiveAccess();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-secondary/20 py-8 px-4">
@@ -127,7 +128,7 @@ const Pricing = () => {
             Continue your spiritual journey with Dharma AI
           </p>
           
-          {/* Trial info or expired message */}
+          {/* Trial info / cancelled / expired message */}
           {isTrialActive ? (
             <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/30 rounded-xl p-4 max-w-md mx-auto">
               <p className="text-sm">
@@ -137,10 +138,24 @@ const Pricing = () => {
                 Subscribe now to continue uninterrupted access
               </p>
             </div>
+          ) : cancelledButActive ? (
+            <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-xl p-4 max-w-md mx-auto">
+              <p className="text-sm text-amber-400">
+                Your subscription is cancelled, but you still have access until{' '}
+                <strong>{new Date(subscription?.subscription_end_date || '').toLocaleDateString()}</strong>.
+              </p>
+              <Button
+                variant="link"
+                onClick={() => navigate('/dashboard')}
+                className="text-sm mt-1"
+              >
+                Continue to Dashboard
+              </Button>
+            </div>
           ) : subscription && !hasActiveAccess() ? (
             <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-xl p-4 max-w-md mx-auto">
               <p className="text-sm text-red-400">
-                🔒 Your trial has expired
+                🔒 Your access has expired
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 Choose a plan below to continue your journey
