@@ -53,14 +53,15 @@ export const useSubscription = () => {
     if (!user) return null;
 
     try {
+      // Use upsert with explicit has_completed_onboarding: false to ensure new users go through onboarding
       const { data, error } = await supabase
         .from('user_subscriptions')
-        .insert({
+        .upsert({
           user_id: user.id,
           plan_type: 'trial',
           is_active: true,
           has_completed_onboarding: false
-        })
+        }, { onConflict: 'user_id' })
         .select()
         .single();
 

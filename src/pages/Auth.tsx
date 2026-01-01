@@ -45,7 +45,7 @@ const Auth = () => {
   useEffect(() => {
     if (loading || subLoading || !user) return;
 
-    // No subscription yet → onboarding
+    // No subscription yet → onboarding (create trial first)
     if (!subscription) {
       navigate('/onboarding');
       return;
@@ -57,28 +57,39 @@ const Auth = () => {
       return;
     }
 
-    // PAID subscriber (weekly/monthly/yearly) with active access → dashboard
-    if (subscription.plan_type !== 'trial' && subscription.is_active) {
+    // PAID subscriber (weekly/monthly/yearly) with valid subscription → dashboard
+    if (subscription.plan_type !== 'trial') {
       const subEnd = subscription.subscription_end_date ? new Date(subscription.subscription_end_date) : null;
       if (subEnd && new Date() < subEnd) {
-        window.location.href = '/dashboard';
+        navigate('/dashboard');
         return;
       }
+      // Expired paid subscription → pricing
+      navigate('/pricing');
+      return;
     }
 
     // Trial user - check localStorage activation
     if (subscription.plan_type === 'trial') {
       const trialActivated = localStorage.getItem('trial_activated') === 'true';
-      if (trialActivated) {
-        window.location.href = '/dashboard';
+      const trialEnd = new Date(subscription.trial_end_date);
+      const isTrialValid = new Date() < trialEnd;
+
+      if (trialActivated && isTrialValid) {
+        navigate('/dashboard');
         return;
       }
+      
+      if (!isTrialValid) {
+        // Trial expired → pricing
+        navigate('/pricing');
+        return;
+      }
+      
+      // Trial not yet activated → start-free-trial
       navigate('/start-free-trial');
       return;
     }
-
-    // Expired paid subscription → pricing
-    navigate('/pricing');
   }, [user, loading, subLoading, subscription, navigate]);
 
   const handleLogin = async () => {
@@ -125,6 +136,9 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
+      // Clear any stale trial activation from previous sessions
+      localStorage.removeItem('trial_activated');
+      
       const { error } = await signUp(email, password, fullName);
       if (error) {
         toast.error(error.message || 'Failed to sign up. Please try again later.');

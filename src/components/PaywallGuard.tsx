@@ -36,7 +36,7 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
     
     // SCENARIO 2: Logged in but no subscription record → Go to Onboarding
     if (!subscription) {
-      if (!isPublicRoute && !isAuthOnlyRoute && location.pathname !== '/onboarding') {
+      if (location.pathname !== '/onboarding' && !isPublicRoute) {
         navigate('/onboarding');
       }
       return;
@@ -61,9 +61,11 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
       return;
     }
 
-    // SCENARIO 5: Trial user - check if trial was activated
+    // SCENARIO 5: Trial user - check if trial was activated via localStorage
     if (subscription.plan_type === 'trial') {
       const trialActivated = localStorage.getItem('trial_activated') === 'true';
+      const trialEnd = new Date(subscription.trial_end_date);
+      const isTrialValid = new Date() < trialEnd;
       
       // Trial not activated yet → Go to Start Free Trial
       if (!trialActivated) {
@@ -74,7 +76,7 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
       }
       
       // Trial activated but expired → Go to Pricing
-      if (!hasActiveAccess()) {
+      if (!isTrialValid) {
         if (!isPublicRoute && !isAuthOnlyRoute) {
           navigate('/pricing');
         }
