@@ -163,11 +163,22 @@ const Onboarding = () => {
       return;
     }
 
-    // If user has completed onboarding, go to start-free-trial
+    // If user has completed onboarding, check trial activation
     if (subscription?.has_completed_onboarding) {
-      navigate('/start-free-trial');
+      const trialActivated = localStorage.getItem('trial_activated') === 'true';
+      if (trialActivated) {
+        navigate('/dashboard');
+      } else {
+        navigate('/start-free-trial');
+      }
+      return;
     }
-  }, [user, subscription, authLoading, subLoading, profileLoading, navigate]);
+
+    // If no subscription exists yet, create one now (ensures has_completed_onboarding = false)
+    if (!subscription) {
+      createTrialSubscription();
+    }
+  }, [user, subscription, authLoading, subLoading, profileLoading, navigate, createTrialSubscription]);
 
   const handleComplete = async () => {
     if (!user) return;
