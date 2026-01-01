@@ -55,7 +55,8 @@ export const PaywallGuard = ({ children }: PaywallGuardProps) => {
       if (location.pathname === '/onboarding' || 
           location.pathname === '/start-free-trial' || 
           location.pathname === '/start-trial' ||
-          location.pathname === '/') {
+          location.pathname === '/' ||
+          location.pathname === '/pricing') {
         navigate('/dashboard');
       }
       return;

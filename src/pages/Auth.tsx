@@ -41,23 +41,45 @@ const Auth = () => {
     return () => unsubscribe.stop();
   }, []);
 
-  // Redirect if already authenticated - check onboarding + trial activation
+  // Redirect if already authenticated
   useEffect(() => {
     if (loading || subLoading || !user) return;
 
-    const trialActivated = localStorage.getItem('trial_activated') === 'true';
-    if (trialActivated) {
-      window.location.href = '/dashboard';
+    // No subscription yet → onboarding
+    if (!subscription) {
+      navigate('/onboarding');
       return;
     }
 
-    if (subscription?.has_completed_onboarding) {
+    // Not completed onboarding → onboarding
+    if (!subscription.has_completed_onboarding) {
+      navigate('/onboarding');
+      return;
+    }
+
+    // PAID subscriber (weekly/monthly/yearly) with active access → dashboard
+    if (subscription.plan_type !== 'trial' && subscription.is_active) {
+      const subEnd = subscription.subscription_end_date ? new Date(subscription.subscription_end_date) : null;
+      if (subEnd && new Date() < subEnd) {
+        window.location.href = '/dashboard';
+        return;
+      }
+    }
+
+    // Trial user - check localStorage activation
+    if (subscription.plan_type === 'trial') {
+      const trialActivated = localStorage.getItem('trial_activated') === 'true';
+      if (trialActivated) {
+        window.location.href = '/dashboard';
+        return;
+      }
       navigate('/start-free-trial');
       return;
     }
 
-    navigate('/onboarding');
-  }, [user, loading, subLoading, subscription?.has_completed_onboarding, navigate]);
+    // Expired paid subscription → pricing
+    navigate('/pricing');
+  }, [user, loading, subLoading, subscription, navigate]);
 
   const handleLogin = async () => {
     if (!email || !email.includes('@')) {

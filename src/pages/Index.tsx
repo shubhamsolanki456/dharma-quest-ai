@@ -37,9 +37,15 @@ const Index = () => {
       return;
     }
 
-    // SCENARIO 5: Paid subscriber with active access → Dashboard
+    // SCENARIO 5: Paid subscriber with active access → Dashboard (highest priority after onboarding)
     if (isPaidSubscriber() && hasActiveAccess()) {
       navigate('/dashboard');
+      return;
+    }
+
+    // SCENARIO 5b: Paid subscriber but expired → Pricing
+    if (isPaidSubscriber() && !hasActiveAccess()) {
+      navigate('/pricing');
       return;
     }
 
