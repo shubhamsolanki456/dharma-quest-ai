@@ -219,14 +219,14 @@ const Settings = () => {
         {user && (
           <Card className="card-3d-subtle p-4 rounded-xl">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-saffron flex items-center justify-center">
+              <div className="w-14 h-14 rounded-full bg-gradient-saffron flex items-center justify-center shrink-0">
                 <User className="h-7 w-7 text-primary-foreground" />
               </div>
-              <div className="flex-1">
-                <p className="font-display text-foreground">{user.email}</p>
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-foreground truncate">{user.email}</p>
                 <p className="text-sm text-muted-foreground">Spiritual Seeker</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate('/profile')}>
                 Edit
               </Button>
             </div>
