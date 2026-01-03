@@ -14,7 +14,6 @@ interface SubscriptionRequest {
 }
 
 // Plan IDs must be created in Razorpay Dashboard → Products → Plans
-// Replace these with your actual plan IDs from Razorpay Dashboard
 const RAZORPAY_PLAN_IDS: Record<string, string> = {
   weekly:  Deno.env.get("RAZORPAY_PLAN_WEEKLY") || "",
   monthly: Deno.env.get("RAZORPAY_PLAN_MONTHLY") || "",
@@ -61,7 +60,7 @@ serve(async (req) => {
     // Step 1: Create or get Razorpay Customer
     let customerId: string | null = null;
 
-    // Check if user already has a customer_id
+    // Check if user already has a customer_id in our database
     const { data: existingSub } = await supabase
       .from("user_subscriptions")
       .select("razorpay_customer_id")
@@ -70,9 +69,9 @@ serve(async (req) => {
 
     if (existingSub?.razorpay_customer_id) {
       customerId = existingSub.razorpay_customer_id;
-      console.log("Using existing Razorpay customer:", customerId);
+      console.log("Using existing Razorpay customer from DB:", customerId);
     } else {
-      // Create new customer
+      // Try to create a new customer, but handle "already exists" error
       console.log("Creating Razorpay customer for:", userEmail);
       const customerResponse = await fetch("https://api.razorpay.com/v1/customers", {
         method: "POST",
@@ -87,24 +86,54 @@ serve(async (req) => {
         }),
       });
 
-      if (!customerResponse.ok) {
-        const errorData = await customerResponse.text();
-        console.error("Failed to create Razorpay customer:", errorData);
-        throw new Error("Failed to create customer");
+      if (customerResponse.ok) {
+        const customerData = await customerResponse.json();
+        customerId = customerData.id;
+        console.log("Created new Razorpay customer:", customerId);
+      } else {
+        const errorData = await customerResponse.json();
+        console.log("Customer creation response:", JSON.stringify(errorData));
+        
+        // If customer already exists, fetch by email
+        if (errorData?.error?.description?.includes("already exists")) {
+          console.log("Customer already exists, fetching by email:", userEmail);
+          
+          const fetchCustomerResponse = await fetch(
+            `https://api.razorpay.com/v1/customers?email=${encodeURIComponent(userEmail)}`,
+            {
+              method: "GET",
+              headers: {
+                "Authorization": authHeader,
+              },
+            }
+          );
+
+          if (fetchCustomerResponse.ok) {
+            const customersData = await fetchCustomerResponse.json();
+            if (customersData.items && customersData.items.length > 0) {
+              customerId = customersData.items[0].id;
+              console.log("Found existing Razorpay customer:", customerId);
+            }
+          }
+        }
+        
+        if (!customerId) {
+          console.error("Failed to create/find Razorpay customer:", JSON.stringify(errorData));
+          throw new Error("Failed to create customer");
+        }
       }
 
-      const customerData = await customerResponse.json();
-      customerId = customerData.id;
-      console.log("Created Razorpay customer:", customerId);
-
       // Save customer ID to database
-      await supabase
-        .from("user_subscriptions")
-        .upsert({
-          user_id: userId,
-          razorpay_customer_id: customerId,
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "user_id" });
+      if (customerId) {
+        await supabase
+          .from("user_subscriptions")
+          .upsert({
+            user_id: userId,
+            razorpay_customer_id: customerId,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" });
+        console.log("Saved customer ID to database:", customerId);
+      }
     }
 
     // Step 2: Create Razorpay Subscription
@@ -125,7 +154,6 @@ serve(async (req) => {
         notes: {
           plan_type: planType,
           user_id: userId,
-          user_email: userEmail,
         },
       }),
     });
@@ -137,23 +165,23 @@ serve(async (req) => {
     }
 
     const subscriptionData = await subscriptionResponse.json();
-    console.log("Razorpay subscription created:", subscriptionData.id, "short_url:", subscriptionData.short_url);
+    console.log("Razorpay subscription created:", subscriptionData.id);
 
-    // Save subscription ID (pending activation via webhook)
+    // Save subscription ID to database
     await supabase
       .from("user_subscriptions")
       .upsert({
         user_id: userId,
         razorpay_subscription_id: subscriptionData.id,
         razorpay_plan_id: razorpayPlanId,
-        plan_type: planType,
+        razorpay_customer_id: customerId,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id" });
 
     return new Response(
       JSON.stringify({
         subscriptionId: subscriptionData.id,
-        shortUrl: subscriptionData.short_url, // hosted payment link
+        shortUrl: subscriptionData.short_url,
         keyId: razorpayKeyId,
         planName: PLAN_NAMES[planType],
         prefill: {
