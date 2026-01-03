@@ -126,11 +126,17 @@ const Dashboard = () => {
     
     try {
       const todayIST = getISTDate();
+      // Create proper timestamp range for today in IST
+      // IST is UTC+5:30, so today 00:00 IST = previous day 18:30 UTC
+      const startOfDayIST = `${todayIST}T00:00:00+05:30`;
+      const endOfDayIST = `${todayIST}T23:59:59+05:30`;
+      
       const { data } = await supabase
         .from('quest_completions')
         .select('quest_id')
         .eq('user_id', user.id)
-        .gte('completed_at', todayIST);
+        .gte('completed_at', startOfDayIST)
+        .lte('completed_at', endOfDayIST);
       
       if (data) {
         setCompletedQuestIds(data.map(d => d.quest_id));
