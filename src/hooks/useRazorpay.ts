@@ -4,11 +4,9 @@ import { toast } from 'sonner';
 
 type PlanType = 'weekly' | 'monthly' | 'yearly';
 
-interface RazorpayOptions {
+interface RazorpaySubscriptionOptions {
   key: string;
-  amount: number;
-  currency: string;
-  order_id: string;
+  subscription_id: string;
   name: string;
   description: string;
   prefill: {
@@ -22,15 +20,15 @@ interface RazorpayOptions {
   theme: {
     color: string;
   };
-  handler?: (response: RazorpayResponse) => void;
+  handler?: (response: RazorpaySubscriptionResponse) => void;
   modal?: {
     ondismiss?: () => void;
   };
 }
 
-interface RazorpayResponse {
+interface RazorpaySubscriptionResponse {
   razorpay_payment_id: string;
-  razorpay_order_id: string;
+  razorpay_subscription_id: string;
   razorpay_signature: string;
 }
 
@@ -41,7 +39,7 @@ interface RazorpayInstance {
 
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+    Razorpay: new (options: RazorpaySubscriptionOptions) => RazorpayInstance;
   }
 }
 
@@ -87,37 +85,35 @@ export const useRazorpay = () => {
           throw new Error('Failed to load payment gateway');
         }
 
-        // Create order via backend (one-time payment)
-        const { data, error } = await supabase.functions.invoke('create-razorpay-order', {
+        // Create subscription via backend
+        const { data, error } = await supabase.functions.invoke('create-razorpay-subscription', {
           body: { planType, userId, userEmail, userName },
         });
 
         if (error) {
-          throw new Error(error.message || 'Failed to create order');
+          throw new Error(error.message || 'Failed to create subscription');
         }
 
-        if (!data?.orderId) {
-          throw new Error(data?.error || 'Failed to create order');
+        if (!data?.subscriptionId) {
+          throw new Error(data?.error || 'Failed to create subscription');
         }
 
-        // Store order info for verification after payment
+        // Store subscription info for verification after payment
         sessionStorage.setItem(
           'razorpay_pending_payment',
           JSON.stringify({
             planType,
             userId,
-            orderId: data.orderId,
+            subscriptionId: data.subscriptionId,
           })
         );
 
-        console.log('Opening Razorpay checkout for order:', data.orderId);
+        console.log('Opening Razorpay checkout for subscription:', data.subscriptionId);
 
-        // Configure Razorpay Standard Checkout (one-time payment)
-        const options: RazorpayOptions = {
+        // Configure Razorpay Subscription Checkout
+        const options: RazorpaySubscriptionOptions = {
           key: data.keyId,
-          amount: data.amount,
-          currency: data.currency,
-          order_id: data.orderId,
+          subscription_id: data.subscriptionId,
           name: 'Dharma AI',
           description: data.planName,
           prefill: {
@@ -131,33 +127,15 @@ export const useRazorpay = () => {
           theme: {
             color: '#FF9933', // Saffron color
           },
-          handler: async (response: RazorpayResponse) => {
+          handler: async (response: RazorpaySubscriptionResponse) => {
             console.log('Payment successful:', response);
             toast.success('Payment successful! Activating your subscription...');
             sessionStorage.removeItem('razorpay_pending_payment');
             localStorage.setItem('trial_activated', 'true');
 
-            // Verify payment and activate subscription
-            try {
-              const { error: verifyError } = await supabase.functions.invoke('verify-razorpay-payment', {
-                body: {
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_signature: response.razorpay_signature,
-                  plan_type: planType,
-                  user_id: userId,
-                },
-              });
-
-              if (verifyError) {
-                console.error('Payment verification error:', verifyError);
-              }
-            } catch (verifyErr) {
-              console.error('Payment verification failed:', verifyErr);
-            }
-
-            // Navigate to payment success page
-            window.location.href = `/payment-success?plan=${planType}&order_id=${response.razorpay_order_id}`;
+            // The webhook will activate the subscription in DB.
+            // Navigate user to payment success page for confirmation.
+            window.location.href = `/payment-success?plan=${planType}&subscription_id=${response.razorpay_subscription_id}`;
           },
           modal: {
             ondismiss: () => {
